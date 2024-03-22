@@ -31,9 +31,21 @@
 #include <unordered_set>
 #include <vector>
 
-using DataType = double;
-using LabelType = long;
+using FeatureType = double;
+using ClassType = long;
 
-using HistogramType = std::vector<std::vector<DataType>>;
+using ClassWeightType = double;
+using HistogramType = double;
+
+using NumSamplesType = unsigned long;
+using NumFeaturesType = unsigned long;
+using NumOutputsType = unsigned long;
+using NumClassesType = unsigned long;
+
+using NodeIndexType = unsigned long;
+using FeatureIndexType = unsigned long;
+using SampleIndexType = unsigned long;
+
+using TreeDepthType = unsigned long;
 
 #endif
