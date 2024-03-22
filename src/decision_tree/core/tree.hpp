@@ -18,26 +18,26 @@ class Tree {
 private:
     
     struct TreeNode {
-        std::size_t left_child;
-        std::size_t right_child;
-        std::size_t feature_indice;
+        NodeIndexType left_child;
+        NodeIndexType right_child;
+        FeatureIndexType feature_index;
         int has_missing_value;
-        DataType threshold;
-        DataType impurity;
-        DataType improvement;
-        HistogramType histogram;
+        FeatureType threshold;
+        double impurity;
+        double improvement;
+        std::vector<std::vector<HistogramType>> histogram;
 
-        TreeNode(std::size_t left_child_, 
-                 std::size_t right_child_, 
-                 std::size_t feature_indice_,
+        TreeNode(NodeIndexType left_child_, 
+                 NodeIndexType right_child_, 
+                 FeatureIndexType feature_index_,
                  int has_missing_value_,
-                 DataType threshold_,
-                 DataType impurity_,
-                 DataType improvement_,
-                 HistogramType histogram_): 
+                 FeatureType threshold_,
+                 double impurity_,
+                 double improvement_,
+                 std::vector<std::vector<HistogramType>> histogram_): 
             left_child(left_child_), 
             right_child(right_child_), 
-            feature_indice(feature_indice_),
+            feature_index(feature_index_),
             has_missing_value(has_missing_value_),
             threshold(threshold_),
             impurity(impurity_),
@@ -47,20 +47,19 @@ private:
         ~TreeNode() {};
     };
 
-    std::size_t num_outputs_;
-    std::size_t num_features_;
-    
-    std::vector<std::size_t> num_classes_list_;
+    NumOutputsType num_outputs_;
+    NumFeaturesType num_features_;
+    std::vector<NumClassesType> num_classes_list_;
 
-    std::size_t max_depth_;
-    std::size_t node_count_;
-    std::size_t max_num_classes_;
+    TreeDepthType max_depth_;
+    NodeIndexType node_count_;
+    NumClassesType max_num_classes_;
     std::vector<TreeNode> nodes_;
 
 public:
-    Tree(std::size_t num_outputs, 
-         std::size_t num_features, 
-         std::vector<std::size_t> num_classes_list): 
+    Tree(NumOutputsType num_outputs, 
+         NumFeaturesType num_features, 
+         std::vector<NumClassesType> num_classes_list): 
             num_outputs_(num_outputs),
             num_features_(num_features),
             num_classes_list_(num_classes_list) {
@@ -71,19 +70,19 @@ public:
     };
     ~Tree() {};
 
-    std::size_t add_node(bool is_left,
+    NodeIndexType add_node(bool is_left,
                          std::size_t depth, 
-                         std::size_t parent_indice, 
-                         std::size_t feature_indice, 
+                         std::size_t parent_index, 
+                         std::size_t feature_index, 
                          int has_missing_value, 
-                         DataType threshold, 
-                         DataType impurity, 
-                         DataType improvement, 
-                         const HistogramType& histogram) {
+                         FeatureType threshold, 
+                         double impurity, 
+                         double improvement, 
+                         const std::vector<std::vector<HistogramType>>& histogram) {
 
         TreeNode* cur_node = new TreeNode(
             0, 0, 
-            feature_indice,
+            feature_index,
             has_missing_value,
             threshold,
             impurity,
@@ -91,15 +90,15 @@ public:
             histogram);
         nodes_.emplace_back(*cur_node);
 
-        std::size_t node_indice = node_count_++;
+        NodeIndexType node_index = node_count_++;
 
         // not root node
         if (depth > 0) {
             if (is_left) {
-                nodes_[node_indice].left_child = node_indice;
+                nodes_[node_index].left_child = node_index;
             }
             else {
-                nodes_[node_indice].right_child = node_indice;
+                nodes_[node_index].right_child = node_index;
             }
         }
 
@@ -107,7 +106,7 @@ public:
             max_depth_ = depth;
         }
 
-        return node_indice;
+        return node_index;
     }
 
 
