@@ -5,6 +5,9 @@
 
 namespace decisiontree {
 
+/**
+ * @brief 
+*/ 
 class Gini {
 private:
     NumOutputsType num_outputs_;
@@ -32,6 +35,26 @@ private:
     std::vector<HistogramType> left_weighted_num_samples_;
     std::vector<HistogramType> right_weighted_num_samples_;
 
+protected:
+    /**
+     * impurity of a weighted class histogram
+     * The Gini Index is then defined as:
+     *  - index = 1 - sum_{k=0}^{k-1} count_k ** 2, where 
+     * @param histogram sum of the weighted count of each label
+     * 
+    */
+    double compute_impurity(const std::vector<HistogramType>& histogram) {
+        double cnt;
+        double sum_cnt = 0.0;
+        double sum_cnt_squared = 0.0;
+
+        for (IndexType c = 0; c < histogram.size(); ++c) {
+            cnt = static_cast<double>(histogram[c]);
+            sum_cnt += cnt;
+            sum_cnt_squared += cnt * cnt;
+        }
+        return (sum_cnt > 0.0) ? (1.0 - sum_cnt_squared / (sum_cnt*sum_cnt)) : 0.0;
+    };
 
 public:
     Gini(NumOutputsType num_outputs, 
@@ -59,20 +82,40 @@ public:
 
     ~Gini() {};
 
-
+    /**
+     * compute weighted class histograms for current node.
+     * 
+     * @param y target stored as a buffer
+     * @param sample_indices  mask on the samples. 
+     *      Indices of the samples in X and y we want to use, 
+     *      where sample_indices[start:end] correspond to the 
+     *      samples in this node
+     * @param start the first sample to use in the mask
+     * @param end the last sample to use in the mask
+    */
     void compute_node_histogram(const std::vector<ClassType>& y, 
                                 const std::vector<SampleIndexType>& sample_indices, 
                                 SampleIndexType start, 
                                 SampleIndexType end) {
-        
-        
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            // 1d array to hold the class histogram
+            // count labels for each output
+            std::vector<HistogramType> histogram(max_num_classes_, 0);
+            for (IndexType i = start; i < end; i++) {
+                histogram[y[sample_indices[i] * num_outputs_ + o]]++;
+            }
 
-
-
-
-
+            // class_weight_ is set to be 1.0
+            HistogramType weighted_cnt;
+            node_weighted_num_samples_[o] = 0.0;
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                weighted_cnt = class_weight_[o * max_num_classes_ + c] * histogram[c];
+                node_weighted_histogram_[o][c] = weighted_cnt;
+                node_weighted_num_samples_[o] += weighted_cnt;
+            }
+        }
     }
-
 
 
 };
