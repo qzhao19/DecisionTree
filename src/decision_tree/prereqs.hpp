@@ -42,6 +42,7 @@ using NumFeaturesType = unsigned long;
 using NumOutputsType = unsigned long;
 using NumClassesType = unsigned long;
 
+using IndexType = unsigned long;
 using NodeIndexType = unsigned long;
 using FeatureIndexType = unsigned long;
 using SampleIndexType = unsigned long;
