@@ -1,7 +1,7 @@
 #ifndef CORE_CRITERION_HPP
 #define CORE_CRITERION_HPP
 
-#include "prereqs.hpp"
+#include "../prereqs.hpp"
 
 namespace decisiontree {
 
@@ -35,9 +35,11 @@ private:
     std::vector<HistogramType> left_weighted_num_samples_;
     std::vector<HistogramType> right_weighted_num_samples_;
 
+    SampleIndexType threshold_index_;
+
 protected:
     /**
-     * impurity of a weighted class histogram
+     * @brief impurity of a weighted class histogram
      * The Gini Index is then defined as:
      *  - index = 1 - sum_{k=0}^{k-1} count_k ** 2, where 
      * @param histogram sum of the weighted count of each label
@@ -78,12 +80,13 @@ public:
 
             right_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes_, 0.0)), 
             right_weighted_num_samples_(num_outputs, 0.0), 
-            right_impurity_(num_outputs, 0.0) {};
+            right_impurity_(num_outputs, 0.0), 
+            threshold_index_(0) {};
 
     ~Gini() {};
 
     /**
-     * compute weighted class histograms for current node.
+     * @brief weighted class histograms for current node.
      * 
      * @param y target stored as a buffer
      * @param sample_indices  mask on the samples. 
@@ -115,6 +118,108 @@ public:
                 node_weighted_num_samples_[o] += weighted_cnt;
             }
         }
+    }
+
+    /**
+     * @brief Evaluate the impurity of the current node.
+    */
+    void compute_node_impurity() {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            node_impurity_[o] = compute_impurity(node_weighted_histogram_[o]);
+        }
+    } 
+
+    /**
+     * @brief compute impurity for all outputs of samples for 
+     *  right child and right child
+    */
+    void compute_children_impurity() {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            left_impurity_[o] = compute_impurity(left_weighted_histogram_[o]);
+            right_impurity_[o] = compute_impurity(right_weighted_histogram_[o]);
+        }
+    }
+
+    /**
+     * @brief initialize class histograms for all outputs 
+     *  for using a threshold on samples with values,
+    */
+    void init_children_histogram() {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            // init class histogram for left child and right child value of 
+            // left child is 0, value of right child is current node value
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                left_weighted_histogram_[o][c] = 0.0;
+                right_weighted_histogram_[o][c] = node_weighted_histogram_[o][c];
+            }
+
+            left_weighted_num_samples_[o] = 0.0;
+            right_weighted_num_samples_[o] = node_weighted_num_samples_[o];
+        }
+        // update current position
+        threshold_index_ = 0;
+    }
+
+    /**
+     * @brief update class histograms of child nodes with new threshold
+    */
+    void update_children_histogram(const std::vector<ClassType>& y, 
+                                   const std::vector<SampleIndexType>& sample_indices,
+                                   SampleIndexType new_threshold_index) {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            std::vector<HistogramType> histogram(max_num_classes_, 0);
+
+            for (IndexType i = threshold_index_; i < new_threshold_index; i++) {
+                histogram[y[sample_indices[i] * num_outputs_ + o]]++;
+            }
+
+            // add histogram for samples[index:new_index] to class histogram
+            // for samples[0:index] with value < threshold ==> left child
+            // subtract histogram for samples[index:new_index] to class histogram
+            // for samples[0:index] with value >= threshold ==> right child
+            HistogramType weighted_cnt;
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                weighted_cnt = class_weight_[o * max_num_classes_ + c] * histogram[c];
+                // left child
+                left_weighted_histogram_[o][c] += weighted_cnt;
+                left_weighted_num_samples_[o] += weighted_cnt;
+
+                // right child
+                right_weighted_histogram_[o][c] -= weighted_cnt;
+                right_weighted_num_samples_[o] -= weighted_cnt;
+            }
+        }
+        // update current threshold index
+        threshold_index_ = new_threshold_index;
+    }
+
+    /**
+     * @brief interface method to return weighted histogram of the current node
+    */
+    std::vector<std::vector<HistogramType>> get_weighted_histogram() {
+        return node_weighted_histogram_;
+    }
+    
+    double get_node_impurity() {
+        return std::accumulate(node_impurity_.begin(), 
+                               node_impurity_.end(), 
+                               0.0) / num_outputs_;
+    }
+
+    double get_left_impurity() {
+        return std::accumulate(left_impurity_.begin(), 
+                               left_impurity_.end(), 
+                               0.0) / num_outputs_;
+    }
+
+    double get_right_impurity() {
+        return std::accumulate(right_impurity_.begin(), 
+                               right_impurity_.end(), 
+                               0.0) / num_outputs_;
     }
 
 
