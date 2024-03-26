@@ -198,25 +198,66 @@ public:
     }
 
     /**
+     * This method computes the improvement in impurity when a split occurs.
+     * The weighted impurity improvement equation is the following:
+     *          N_t / N * (impurity - N_t_R / N_t * right_impurity
+     *                              - N_t_L / N_t * left_impurity)
+     * where N is the total number of samples, N_t is the number of samples
+     * at the current node, N_t_L is the number of samples in the left child,
+     * and N_t_R is the number of samples in the right child
+    */
+    double compute_impurity_improvement() {
+        std::vector<double> impurity_improvement(num_outputs_, 0.0);
+        for (IndexType o = 0; o < num_outputs_; ++o) {
+            impurity_improvement[o] += (node_weighted_num_samples_[o] / num_samples_) * (node_impurity_[o] - 
+                left_weighted_num_samples_[o] / node_weighted_num_samples_[o] * left_impurity_[o] - 
+                    right_weighted_num_samples_[o] / node_weighted_num_samples_[o] * right_impurity_[o]);
+        }
+
+        return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
+    }
+
+    /**
      * @brief interface method to return weighted histogram of the current node
     */
-    std::vector<std::vector<HistogramType>> get_weighted_histogram() {
+    const std::vector<std::vector<HistogramType>> get_node_weighted_histogram() {
         return node_weighted_histogram_;
     }
+
+    const std::vector<std::vector<HistogramType>> get_left_weighted_histogram() {
+        return left_weighted_histogram_;
+    }
+
+    const std::vector<std::vector<HistogramType>> get_right_weighted_histogram() {
+        return right_weighted_histogram_;
+    }
+
+    const std::vector<HistogramType> get_node_weighted_num_samples() {
+        return node_weighted_num_samples_;
+    }
+
+    const std::vector<HistogramType> get_left_weighted_num_samples() {
+        return left_weighted_num_samples_;
+    }
+
+    const std::vector<HistogramType> get_right_weighted_num_samples() {
+        return right_weighted_num_samples_;
+    }
+
     
-    double get_node_impurity() {
+    const double get_node_impurity() {
         return std::accumulate(node_impurity_.begin(), 
                                node_impurity_.end(), 
                                0.0) / num_outputs_;
     }
 
-    double get_left_impurity() {
+    const double get_left_impurity() {
         return std::accumulate(left_impurity_.begin(), 
                                left_impurity_.end(), 
                                0.0) / num_outputs_;
     }
 
-    double get_right_impurity() {
+    const double get_right_impurity() {
         return std::accumulate(right_impurity_.begin(), 
                                right_impurity_.end(), 
                                0.0) / num_outputs_;
