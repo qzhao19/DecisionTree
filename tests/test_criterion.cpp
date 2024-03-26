@@ -64,8 +64,6 @@ public:
                                                             max_num_classes,
                                                             y, 
                                                             num_classes_list);
-        std::vector<unsigned long> samples(num_samples);
-        std::iota(samples.begin(), samples.end(), 0);
         criterion = new decisiontree::Gini(num_outputs, 
                                             num_samples, 
                                             max_num_classes, 
@@ -84,14 +82,13 @@ public:
 };
 
 TEST_F(CriterionTest, ComputeNodeHistogramTest) {
-
     std::vector<long> y = {0, 0, 0, 1, 1, 1, 2, 2, 2};
     unsigned long num_samples = y.size();
-    std::vector<unsigned long> samples(num_samples);
-    std::iota(samples.begin(), samples.end(), 0);
+    std::vector<unsigned long> sample_indices(num_samples);
+    std::iota(sample_indices.begin(), sample_indices.end(), 0);
 
-    criterion->compute_node_histogram(y, samples, 0, num_samples);
-    std::vector<std::vector<double>> node_weighted_histogram = criterion->get_weighted_histogram();
+    criterion->compute_node_histogram(y, sample_indices, 0, num_samples);
+    std::vector<std::vector<double>> node_weighted_histogram = criterion->get_node_weighted_histogram();
 
     std::vector<std::vector<double>> expect = {{3.0, 3.0, 3.0}};
     EXPECT_THAT(node_weighted_histogram, ::testing::ContainerEq(expect));
@@ -100,13 +97,79 @@ TEST_F(CriterionTest, ComputeNodeHistogramTest) {
 TEST_F(CriterionTest, ComputeNodeImpurityTest) {
     std::vector<long> y = {0, 0, 0, 1, 1, 1, 2, 2, 2};
     unsigned long num_samples = y.size();
-    std::vector<unsigned long> samples(num_samples);
-    std::iota(samples.begin(), samples.end(), 0);
+    std::vector<unsigned long> sample_indices(num_samples);
+    std::iota(sample_indices.begin(), sample_indices.end(), 0);
 
-    criterion->compute_node_histogram(y, samples, 0, num_samples);
+    criterion->compute_node_histogram(y, sample_indices, 0, num_samples);
     criterion->compute_node_impurity();
     double impurity = criterion->get_node_impurity();
 
+    EXPECT_PRED_FORMAT2(DoubleLE, impurity, 0.66667);
+}
+
+TEST_F(CriterionTest, InitChildrenHistogramTest) {
+    std::vector<long> y = {0, 0, 0, 1, 1, 1, 2, 2, 2};
+    unsigned long num_samples = y.size();
+    std::vector<unsigned long> sample_indices(num_samples);
+    std::iota(sample_indices.begin(), sample_indices.end(), 0);
+
+    criterion->compute_node_histogram(y, sample_indices, 0, num_samples);
+    criterion->init_children_histogram();
+    
+    std::vector<std::vector<HistogramType>> left_weighted_histogram = criterion->get_left_weighted_histogram();
+    std::vector<std::vector<HistogramType>> right_weighted_histogram = criterion->get_right_weighted_histogram();
+
+    std::vector<std::vector<HistogramType>> expect1 = {{0.0, 0.0, 0.0}};
+    std::vector<std::vector<HistogramType>> expect2 = {{3.0, 3.0, 3.0}};
+    EXPECT_THAT(left_weighted_histogram, ::testing::ContainerEq(expect1));
+    EXPECT_THAT(right_weighted_histogram, ::testing::ContainerEq(expect2));
+
+    std::vector<HistogramType> left_weighted_num_samples = criterion->get_left_weighted_num_samples();
+    std::vector<HistogramType> right_weighted_num_samples = criterion->get_right_weighted_num_samples();
+
+    std::vector<HistogramType> expect3 = {0.0};
+    std::vector<HistogramType> expect4 = {9.0};
+    EXPECT_THAT(left_weighted_num_samples, ::testing::ContainerEq(expect3));
+    EXPECT_THAT(right_weighted_num_samples, ::testing::ContainerEq(expect4));
+}
+
+TEST_F(CriterionTest, UpdateChildrenHistogramTest) {
+    std::vector<long> y = {0, 0, 0, 1, 1, 1, 2, 2, 2};
+    unsigned long num_samples = y.size();
+    std::vector<unsigned long> sample_indices(num_samples);
+    std::iota(sample_indices.begin(), sample_indices.end(), 0);
+
+    criterion->compute_node_histogram(y, sample_indices, 0, num_samples);
+    criterion->init_children_histogram();
+    criterion->update_children_histogram(y, sample_indices, 3);
+
+    std::vector<std::vector<HistogramType>> left_weighted_histogram = criterion->get_left_weighted_histogram();
+    std::vector<std::vector<HistogramType>> right_weighted_histogram = criterion->get_right_weighted_histogram();
+
+    std::vector<std::vector<HistogramType>> expect1 = {{3.0, 0.0, 0.0}};
+    std::vector<std::vector<HistogramType>> expect2 = {{0.0, 3.0, 3.0}};
+    EXPECT_THAT(left_weighted_histogram, ::testing::ContainerEq(expect1));
+    EXPECT_THAT(right_weighted_histogram, ::testing::ContainerEq(expect2));
+
+    std::vector<HistogramType> left_weighted_num_samples = criterion->get_left_weighted_num_samples();
+    std::vector<HistogramType> right_weighted_num_samples = criterion->get_right_weighted_num_samples();
+
+    std::vector<HistogramType> expect3 = {3.0};
+    std::vector<HistogramType> expect4 = {6.0};
+    EXPECT_THAT(left_weighted_num_samples, ::testing::ContainerEq(expect3));
+    EXPECT_THAT(right_weighted_num_samples, ::testing::ContainerEq(expect4));
+}
+
+TEST_F(CriterionTest, ComputeImpurityImprovementTest) {
+    std::vector<long> y = {0, 0, 0, 1, 1, 1, 2, 2, 2};
+    unsigned long num_samples = y.size();
+    std::vector<unsigned long> sample_indices(num_samples);
+    std::iota(sample_indices.begin(), sample_indices.end(), 0);
+
+    criterion->compute_node_histogram(y, sample_indices, 0, num_samples);
+    criterion->init_children_histogram();
+    
+    double impurity = criterion->compute_impurity_improvement();
     EXPECT_PRED_FORMAT2(DoubleLE, impurity, 0.66667);
 }
 
