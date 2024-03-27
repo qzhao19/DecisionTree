@@ -64,11 +64,11 @@ public:
                                                             max_num_classes,
                                                             y, 
                                                             num_classes_list);
-        criterion = new decisiontree::Gini(num_outputs, 
-                                            num_samples, 
-                                            max_num_classes, 
-                                            num_classes_list, 
-                                            class_weight);
+        criterion = new decisiontree::Criterion(num_outputs, 
+                                                num_samples, 
+                                                max_num_classes, 
+                                                num_classes_list, 
+                                                class_weight);
     }
 
     virtual void TearDown() {
@@ -78,7 +78,7 @@ public:
         }
     }
 
-    decisiontree::Gini* criterion;
+    decisiontree::Criterion* criterion;
 };
 
 TEST_F(CriterionTest, ComputeNodeHistogramTest) {
@@ -104,7 +104,7 @@ TEST_F(CriterionTest, ComputeNodeImpurityTest) {
     criterion->compute_node_impurity();
     double impurity = criterion->get_node_impurity();
 
-    EXPECT_PRED_FORMAT2(DoubleLE, impurity, 0.66667);
+    EXPECT_PRED_FORMAT2(DoubleLE, impurity, double(2.0/3.0));
 }
 
 TEST_F(CriterionTest, InitChildrenHistogramTest) {
@@ -170,7 +170,7 @@ TEST_F(CriterionTest, ComputeImpurityImprovementTest) {
     criterion->init_children_histogram();
     
     double impurity = criterion->compute_impurity_improvement();
-    EXPECT_PRED_FORMAT2(DoubleLE, impurity, 0.66667);
+    EXPECT_PRED_FORMAT2(DoubleLE, impurity, double(2.0/3.0));
 }
 
 
@@ -179,6 +179,5 @@ int main(int argc, char* argv[])
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
 
 } //namespace
