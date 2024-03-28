@@ -8,7 +8,7 @@ namespace decisiontree {
 /**
  * @brief 
 */ 
-class Gini {
+class Criterion {
 private:
     NumOutputsType num_outputs_;
     NumSamplesType num_samples_;
@@ -59,7 +59,7 @@ protected:
     };
 
 public:
-    Gini(NumOutputsType num_outputs, 
+    Criterion(NumOutputsType num_outputs, 
          NumSamplesType num_samples, 
          NumClassesType max_num_classes, 
          std::vector<NumClassesType> num_classes_list, 
@@ -83,7 +83,7 @@ public:
             right_impurity_(num_outputs, 0.0), 
             threshold_index_(0) {};
 
-    ~Gini() {};
+    ~Criterion() {};
 
     /**
      * @brief weighted class histograms for current node.
@@ -244,7 +244,6 @@ public:
         return right_weighted_num_samples_;
     }
 
-    
     const double get_node_impurity() {
         return std::accumulate(node_impurity_.begin(), 
                                node_impurity_.end(), 
@@ -267,5 +266,4 @@ public:
 };
 
 }
-
 #endif //CORE_CRITERION_HPP
