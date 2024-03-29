@@ -2,9 +2,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../src/decision_tree/utils/random.hpp"
-#include "../src/decision_tree/core/criterion.hpp"
-#include "../src/decision_tree/core/splitter.hpp"
+#include "../decision_tree/utils/random.hpp"
+#include "../decision_tree/core/criterion.hpp"
+#include "../decision_tree/core/splitter.hpp"
 
 namespace {
 
