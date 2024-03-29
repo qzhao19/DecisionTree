@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../src/decision_tree/core/criterion.hpp"
+#include "../decision_tree/core/criterion.hpp"
 
 namespace {
 
@@ -171,13 +171,6 @@ TEST_F(CriterionTest, ComputeImpurityImprovementTest) {
     
     double impurity = criterion->compute_impurity_improvement();
     EXPECT_PRED_FORMAT2(DoubleLE, impurity, double(2.0/3.0));
-}
-
-
-int main(int argc, char* argv[])
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
 
 } //namespace
