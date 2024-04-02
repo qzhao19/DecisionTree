@@ -125,6 +125,13 @@ TEST_F(DepthFirstTreeBuilder, BuildTest) {
     builder->build(X, y, num_samples);
     builder->tree_.print_node_info();
 
+    std::vector<double> f_importances;
+    builder->tree_.compute_feature_importance(f_importances);
+    for (auto& importance : f_importances) {
+        std::cout << "importance = " << importance << " ";
+    }
+    std::cout << std::endl;
+
 };
 
 }
