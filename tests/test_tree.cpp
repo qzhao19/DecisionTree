@@ -68,6 +68,8 @@ TEST_F(TreeTest, AddNodeTest) {
                                                 impurity, 
                                                 improvement, 
                                                 histogram);
+
+    EXPECT_EQ(node_index, 0);
 };
 
 } // namespace
