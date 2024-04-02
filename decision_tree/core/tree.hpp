@@ -16,6 +16,16 @@ namespace decisiontree {
 */
 class Tree {
 private:
+    struct IndexInfo {
+        NodeIndexType index;
+        double weight;
+        IndexInfo(NodeIndexType index, 
+                  double weight) : 
+            index(index), 
+            weight(weight) {};
+        ~IndexInfo() {};
+    };
+
     struct TreeNode {
         NodeIndexType left_child;
         NodeIndexType right_child;
@@ -71,7 +81,6 @@ public:
             num_outputs_(num_outputs),
             num_features_(num_features),
             num_classes_list_(num_classes_list) {
-        
         max_depth_ = 0;
         node_count_ = 0;
         max_num_classes_ = *std::max_element(std::begin(num_classes_list), std::end(num_classes_list));
@@ -115,10 +124,11 @@ public:
     }
 
     /**
-     * 
+     * the importances of features is computed as the total improvement 
+     * of criterion brought by the feature.
     */
     void compute_feature_importance(std::vector<double>& importances) {
-        importances.reserve(num_features_);
+        importances.resize(num_features_);
         if (node_count_ == 0) {
             return;
         }
@@ -141,10 +151,67 @@ public:
                 importances[i] = importances[i] / norm_coeff;
             }
         }
-        importances.shrink_to_fit();
     };
 
 
+    void predict_proba(const std::vector<FeatureType>& X, 
+                       NumSamplesType num_samples,
+                       std::vector<double>& proba) {
+        
+        proba.resize(num_samples * num_outputs_ * max_num_classes_);
+
+        // loop samples
+        for (IndexType i = 0; i < num_samples; ++i) {
+            std::stack<IndexInfo> node_index_stk;
+            std::stack<IndexInfo> leaf_index_stk;
+
+            // goto root node
+            node_index_stk.emplace(IndexInfo(0, 1.0));
+
+            // loop root to leaf node
+            while (!node_index_stk.empty()) {
+                IndexInfo node_index = node_index_stk.top();
+                node_index_stk.pop();
+
+                while (nodes_[node_index.index].left_child > 0 && nodes_[node_index.index].right_child > 0) {
+                    if (std::isnan(X[i * num_features_ + nodes_[node_index.index].feature_index])) {
+                        throw std::runtime_error("Not implemented");
+                    } 
+                    else {
+                        // no missing samples
+                        // if x[i, f_index] is smaller than the partition threshold of current node
+                        // goto left child node, else goto right child node
+                        if (X[i * num_features_ + nodes_[node_index.index].feature_index] <= nodes_[node_index.index].threshold) {
+                            node_index.index = nodes_[node_index.index].left_child;
+                        }
+                        else {
+                            node_index.index = nodes_[node_index.index].right_child;
+                        }
+                    }
+                }
+                // store leaf nodes
+                leaf_index_stk.emplace(node_index);
+            }
+            while (!leaf_index_stk.empty()) {
+                IndexInfo leaf_index = leaf_index_stk.top();
+                leaf_index_stk.pop();
+                for (IndexType o = 0; o < num_outputs_; ++o) {
+                    double norm_coeff = 0.0;
+                    for (NumClassesType c = 0; c < num_classes_list_[o]; ++c) {
+                        norm_coeff += nodes_[leaf_index.index].histogram[o][c];
+                    }
+                    if (norm_coeff > 0.0) {
+                        for (NumClassesType c = 0; c < num_classes_list_[o]; ++c) {
+                            proba[i * num_outputs_ * max_num_classes_ + o * max_num_classes_ + c] += leaf_index.weight * 
+                                nodes_[leaf_index.index].histogram[o][c] / norm_coeff;
+                        }
+                    }
+                }
+
+            }
+        }
+        
+    };
 
     void print_node_info() {
         for (IndexType i = 0; i < nodes_.size(); i++) {
