@@ -59,6 +59,8 @@ protected:
     };
 
 public:
+    // default constructor
+    Criterion() {};
     Criterion(NumOutputsType num_outputs, 
          NumSamplesType num_samples, 
          NumClassesType max_num_classes, 
