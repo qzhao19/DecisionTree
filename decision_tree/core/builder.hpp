@@ -86,10 +86,10 @@ public:
             NumSamplesType num_node_samples = node_info.end - node_info.start;
 
             bool is_leaf = (node_info.depth >= max_depth_) ||
-                            // (num_node_samples < min_samples_split_) || 
-                            // (num_node_samples < 2 * min_samples_leaf_) || 
-                            // (num_node_samples < 2 * min_weight_leaf_) ||
-                            (impurity <= EPSILON);
+                           (num_node_samples < min_samples_split_) || 
+                           (num_node_samples < 2 * min_samples_leaf_) || 
+                           (num_node_samples < 2 * min_weight_leaf_) ||
+                           (impurity <= EPSILON);
 
             FeatureIndexType feature_index = 0;
             SampleIndexType partition_index = 0;
