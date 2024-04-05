@@ -160,6 +160,8 @@ protected:
 public:
     Criterion criterion_;
 
+public:
+    Splitter() {};
     Splitter(NumFeaturesType num_features, 
              NumSamplesType num_samples, 
              NumFeaturesType max_num_features, 
@@ -178,7 +180,6 @@ public:
             // init the mask on the samples.
             std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
         };
-
     ~Splitter() {};
 
     /**
