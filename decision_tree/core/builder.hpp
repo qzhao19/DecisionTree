@@ -45,6 +45,7 @@ private:
 
 public:
     Tree tree_;
+    DepthFirstTreeBuilder() {};
     DepthFirstTreeBuilder(TreeDepthType max_depth, 
                           NumSamplesType min_samples_split, 
                           NumSamplesType min_samples_leaf, 
@@ -116,9 +117,10 @@ public:
                                                       feature_index, 
                                                       has_missing_value, 
                                                       partition_threshold, 
-                                                      impurity, improvement, 
+                                                      impurity, 
+                                                      improvement, 
                                                       histogram);
-            
+
             if (!is_leaf) {
                 // push right child node info into the stack
                 node_info_stk.emplace(NodeInfo(partition_index, node_info.end, node_info.depth + 1, node_index, false));
@@ -129,7 +131,6 @@ public:
         };
 
         tree_.nodes_.shrink_to_fit();
-
     };
 
 };
