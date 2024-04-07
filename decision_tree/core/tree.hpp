@@ -36,21 +36,21 @@ private:
         double improvement;
         std::vector<std::vector<HistogramType>> histogram;
 
-        TreeNode(NodeIndexType left_child_, 
-                 NodeIndexType right_child_, 
-                 FeatureIndexType feature_index_,
-                 int has_missing_value_,
-                 FeatureType threshold_,
-                 double impurity_,
-                 double improvement_,
-                 std::vector<std::vector<HistogramType>> histogram_): 
-            left_child(left_child_), 
-            right_child(right_child_), 
-            feature_index(feature_index_),
-            has_missing_value(has_missing_value_),
-            threshold(threshold_),
-            impurity(impurity_),
-            improvement(improvement_),
+        TreeNode(NodeIndexType left_child, 
+                 NodeIndexType right_child, 
+                 FeatureIndexType feature_index,
+                 int has_missing_value,
+                 FeatureType threshold,
+                 double impurity,
+                 double improvement,
+                 const std::vector<std::vector<HistogramType>>& histogram): 
+            left_child(left_child), 
+            right_child(right_child), 
+            feature_index(feature_index),
+            has_missing_value(has_missing_value),
+            threshold(threshold),
+            impurity(impurity),
+            improvement(improvement),
             histogram(histogram) {};
         
         ~TreeNode() {};
@@ -64,17 +64,19 @@ private:
     NodeIndexType node_count_;
     NumClassesType max_num_classes_;
 
-
     friend std::ostream& operator<<(std::ostream& os, const TreeNode& node){
         return os << "left child = " << node.left_child 
                   << ", right child = " << node.right_child 
                   << ", threshold = " << node.threshold
-                  << ", improvement = " << node.improvement;
+                  << ", improvement = " << node.improvement
+                  << ", histogram size = (" << node.histogram.size() 
+                  << ", " << node.histogram[0].size() << ")";
     }
 
 public:
     std::vector<TreeNode> nodes_;
 
+    Tree() {};
     Tree(NumOutputsType num_outputs, 
          NumFeaturesType num_features, 
          std::vector<NumClassesType> num_classes_list): 
@@ -103,9 +105,10 @@ public:
                             feature_index, 
                             has_missing_value, 
                             threshold, impurity, 
-                            improvement, histogram);
+                            improvement, 
+                            histogram);
         NodeIndexType node_index = node_count_++;
-
+        
         // not root node
         if (depth > 0) {
             if (is_left) {
@@ -128,11 +131,11 @@ public:
      * of criterion brought by the feature.
     */
     void compute_feature_importance(std::vector<double>& importances) {
-        importances.resize(num_features_);
+        importances.resize(num_features_, 0.0);
         if (node_count_ == 0) {
             return;
         }
-
+        
         // loop all node
         for (IndexType i = 0; i < node_count_; ++i) {
             // loop all non-leaf node, accumulate improvement per features
@@ -157,9 +160,8 @@ public:
     void predict_proba(const std::vector<FeatureType>& X, 
                        NumSamplesType num_samples,
                        std::vector<double>& proba) {
+        proba.resize(num_samples * num_outputs_ * max_num_classes_, 0.0);
         
-        proba.resize(num_samples * num_outputs_ * max_num_classes_);
-
         // loop samples
         for (IndexType i = 0; i < num_samples; ++i) {
             std::stack<IndexInfo> node_index_stk;
@@ -195,10 +197,12 @@ public:
             while (!leaf_index_stk.empty()) {
                 IndexInfo leaf_index = leaf_index_stk.top();
                 leaf_index_stk.pop();
+
                 for (IndexType o = 0; o < num_outputs_; ++o) {
                     double norm_coeff = 0.0;
                     for (NumClassesType c = 0; c < num_classes_list_[o]; ++c) {
                         norm_coeff += nodes_[leaf_index.index].histogram[o][c];
+                        // std::cout << "norm_coeff = " << norm_coeff << std::endl;
                     }
                     if (norm_coeff > 0.0) {
                         for (NumClassesType c = 0; c < num_classes_list_[o]; ++c) {
