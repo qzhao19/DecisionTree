@@ -1,12 +1,12 @@
 #ifndef DECISION_TREE_CLASSIFIER_HPP_
 #define DECISION_TREE_CLASSIFIER_HPP_
 
-#include "decision_tree/common/prereqs.hpp"
-#include "decision_tree/core/builder.hpp"
-#include "decision_tree/core/criterion.hpp"
-#include "decision_tree/core/splitter.hpp"
-#include "decision_tree/core/tree.hpp"
-#include "decision_tree/utils/random.hpp"
+#include "common/prereqs.hpp"
+#include "core/builder.hpp"
+#include "core/criterion.hpp"
+#include "core/splitter.hpp"
+#include "core/tree.hpp"
+#include "utils/random.hpp"
 
 namespace {
 
@@ -26,8 +26,16 @@ private:
     std::vector<std::vector<std::string>> class_labels_;
     std::shared_ptr<std::vector<double>> class_weight_ptr_;
 
+    NumFeaturesType num_features_;
+    NumOutputsType num_outputs_;
+    NumClassesType max_num_classes_;
+    std::vector<NumClassesType> num_classes_list_;
+
     decisiontree::RandomState random_state_;
     decisiontree::Criterion criterion_;
+    decisiontree::Splitter splitter_;
+    decisiontree::Tree tree_;
+    std::shared_ptr<decisiontree::DepthFirstTreeBuilder> builder_;
 
 public:
     DecisionTreeClassifier(std::vector<std::string> feature_names,
@@ -53,24 +61,27 @@ public:
                         class_balanced_(class_balanced),
                         criterion_option_(criterion_option),
                         split_policy_(split_policy),
-                        class_weight_ptr_(class_weight_ptr) {};
-    
-    ~DecisionTreeClassifier() {}
-
-
-    void fit(const std::vector<FeatureType> & X, 
-             const std::vector<ClassType>& y) {
-        NumFeaturesType num_features = feature_names_.size();
-        NumOutputsType num_outputs = class_labels_.size();
-        NumSamplesType num_samples = y.size() / num_outputs;
-
-        std::vector<NumClassesType> num_classes_list(class_labels_.size(), 0);
+                        class_weight_ptr_(class_weight_ptr), 
+                        num_features_(feature_names.size()), 
+                        num_outputs_(class_labels.size()) {
+        
+        num_classes_list_.resize(class_labels_.size(), 0);
         for (std::size_t o=0; o < class_labels_.size(); o++) {
-            num_classes_list[o] = class_labels_[o].size();
+            num_classes_list_[o] = class_labels_[o].size();
         }
 
-        NumClassesType max_num_classes = *std::max_element(begin(num_classes_list),
-                                                            end(num_classes_list));
+        max_num_classes_ = *std::max_element(begin(num_classes_list_),
+                                             end(num_classes_list_));
+    };
+    
+    ~DecisionTreeClassifier() {};
+
+    void fit(const std::vector<FeatureType>& X, 
+             const std::vector<ClassType>& y) {
+        // NumFeaturesType num_features = feature_names_.size();
+        // NumOutputsType num_outputs = class_labels_.size();
+        NumSamplesType num_samples = y.size() / num_outputs_;
+
         // check max_depth
         if (max_depth_ < 0) {
             throw std::invalid_argument("max_depth must be positive");
@@ -93,23 +104,23 @@ public:
         // check max_num_features
         NumFeaturesType max_num_features;
         if (max_num_features_ == -1) {
-            max_num_features = num_features;
+            max_num_features = num_features_;
         }
         else if (max_num_features_ > 0) {
             max_num_features = static_cast<NumFeaturesType>(max_num_features_);
         }
 
         // check class_weight
-        std::vector<double> class_weight(num_outputs * max_num_classes, 1.0);;
+        std::vector<double> class_weight(num_outputs_ * max_num_classes_, 1.0);;
         if (class_balanced_) {
-            for (unsigned long o = 0; o < num_outputs; ++o) { // process each output independently
-                std::vector<long> bincount(num_classes_list[o], 0);
+            for (unsigned long o = 0; o < num_outputs_; ++o) { // process each output independently
+                std::vector<long> bincount(num_classes_list_[o], 0);
                 for (unsigned long i = 0; i < num_samples; ++i) {
-                    bincount[y[i * num_outputs + o]]++;
+                    bincount[y[i * num_outputs_ + o]]++;
                 }
-                for (unsigned long c = 0; c < num_classes_list[o]; ++c) {
-                    class_weight[o * max_num_classes + c] =
-                            (static_cast<double>(num_samples) / bincount[c]) / num_classes_list[o];
+                for (unsigned long c = 0; c < num_classes_list_[o]; ++c) {
+                    class_weight[o * max_num_classes_ + c] =
+                        (static_cast<double>(num_samples) / bincount[c]) / num_classes_list_[o];
                 }
             }
         }
@@ -135,10 +146,10 @@ public:
 
         // init criterion
         if (criterion_option_ == "gini") {
-            criterion_ = decisiontree::Criterion(num_outputs, 
+            criterion_ = decisiontree::Criterion(num_outputs_, 
                                                  num_samples, 
-                                                 max_num_classes,
-                                                 num_classes_list, 
+                                                 max_num_classes_,
+                                                 num_classes_list_, 
                                                  class_weight);
         }
         else if (criterion_option_ == "entropy") {
@@ -155,22 +166,45 @@ public:
             random_state_ = decisiontree::RandomState(random_state_seed_);
         }
 
-        decisiontree::Splitter splitter(num_features, 
-                                        num_samples,
-                                        max_num_features,
-                                        split_policy_,
-                                        criterion_,
-                                        random_state_);
-        decisiontree::Tree tree(num_outputs, 
-                                num_features, 
-                                num_classes_list);
+        splitter_ = decisiontree::Splitter(num_features_, 
+                                           num_samples,
+                                           max_num_features,
+                                           split_policy_,
+                                           criterion_,
+                                           random_state_);
+        tree_ = decisiontree::Tree(num_outputs_, 
+                                   num_features_, 
+                                   num_classes_list_);
 
+        builder_ = std::make_shared<decisiontree::DepthFirstTreeBuilder>(max_depth, 
+                                                                        min_samples_split, 
+                                                                        min_samples_leaf, 
+                                                                        min_weight_leaf,
+                                                                        class_weight,
+                                                                        splitter_, 
+                                                                        tree_);
+        builder_->build(X, y, num_samples);
     };
 
+    const std::vector<double> predict_proba(const std::vector<FeatureType>& X) {
+        
+        NumSamplesType num_samples = X.size() / num_features_;
+        std::vector<double> proba;
+        builder_->tree_.predict_proba(X, num_samples, proba);
+
+        return proba;
+    }
 
 
-
-
+    void print() {
+        builder_->tree_.print_node_info();
+        std::vector<double> f_importances(num_features_, 0.0);
+        builder_->tree_.compute_feature_importance(f_importances);
+        for (auto& importance : f_importances) {
+            std::cout << "importance = " << importance << " ";
+        }
+        std::cout << std::endl;
+    }
 
 
 };
