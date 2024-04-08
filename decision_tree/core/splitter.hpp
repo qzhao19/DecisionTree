@@ -25,7 +25,95 @@ private:
     std::vector<SampleIndexType> sample_indices_;
 
 protected:
-    void random_split_feature() {};
+    void random_split_feature(const std::vector<FeatureType>& X, 
+                              const std::vector<ClassType>& y,
+                              std::vector<SampleIndexType>& sample_indices, 
+                              FeatureIndexType feature_index, 
+                              SampleIndexType& partition_index,
+                              FeatureType& partition_threshold,
+                              double& improvement, 
+                              int& has_missing_value) {
+        
+        // copy f_X = X[sample_indices[start:end], feature_index] 
+        // as the selected training data for the current node
+        NumSamplesType num_samples = end_ - start_;
+        std::vector<FeatureType> f_X(num_samples);
+        for (IndexType i = 0; i < num_samples; ++i) {
+            f_X[i] = X[sample_indices[i]*num_features_ + feature_index];
+        }
+        
+        // check the missing value and shift missing value and its index to the left
+        SampleIndexType missing_value_index = 0;
+        for (IndexType i = 0; i < num_samples; ++i) {
+            if (std::isnan(f_X[i])) {
+                std::swap(f_X[i], f_X[missing_value_index]);
+                std::swap(sample_indices[i], sample_indices[missing_value_index]);
+                missing_value_index++;
+            }
+        }
+
+        // if all samples have missing value, cannot split feature
+        if (missing_value_index == num_samples) {
+            return ;
+        }
+
+        // check constant feature in the range of [missing_value_index:num_samples]
+        // we start to check constant feature from non-missing value
+        FeatureType fx_min, fx_max;
+        fx_min = fx_max = f_X[missing_value_index];
+        for (IndexType i = missing_value_index + 1; i < num_samples; ++i) {
+            if (f_X[i] > fx_max) {
+                fx_max = f_X[i];
+            }
+            else if (f_X[i] < fx_min) {
+                fx_min = f_X[i];
+            }
+        }
+
+        // ---Split just based on missing values---
+        if ((missing_value_index > 0) && 
+            ((fx_min + EPSILON > fx_max) || 
+             (random_state_.uniform_int(0, num_samples) < (missing_value_index-1)))) {
+            throw std::runtime_error("Not Implemented");
+        }
+        // ---Split based on threshold---
+        else {
+            // not constant feature
+            if (fx_min + EPSILON < fx_max) {
+                // random a threshold
+                // excludes fx_min, fx_max, with uniform_real(low, high), low is inclusive and high is exclusive
+                partition_threshold = random_state_.uniform_real(fx_min + EPSILON, fx_max);
+
+                // partition sample indices such that f_X[indices[np - 1]] <= threshold < f_X[indices[np]]
+                SampleIndexType index = missing_value_index, next_index = num_samples;
+                while (index < next_index) {
+                    if (f_X[index] <= partition_threshold) {
+                        ++index;
+                    }
+                    else {
+                        --next_index;
+                        std::swap(f_X[index], f_X[next_index]);
+                        std::swap(sample_indices[index], sample_indices[next_index]);
+                    }
+                }
+
+                // no missing value
+                if (missing_value_index == 0) {
+                    criterion_.init_children_histogram();
+                    criterion_.update_children_histogram(y, sample_indices, next_index);
+                    criterion_.compute_children_impurity();
+                    double impurity_improvement = criterion_.compute_impurity_improvement();
+
+                    partition_index = start_ + next_index;
+                    improvement = impurity_improvement;
+                    has_missing_value = -1;
+                }
+                else if (missing_value_index > 0) {
+                    throw std::runtime_error("Not Implemented");
+                }
+            }
+        }
+    };
 
     void best_split_feature(const std::vector<FeatureType>& X, 
                             const std::vector<ClassType>& y, 
@@ -150,8 +238,7 @@ protected:
                 improvement = max_improvement;
                 has_missing_value = -1;
             }
-            
-            if (missing_value_index > 0) {
+            else if (missing_value_index > 0) {
                 throw std::runtime_error("Not Implemented");
             }
         }
@@ -249,7 +336,18 @@ public:
                                    f_has_missing_value);
             }
             else if (split_policy_ == "random") {
-                throw std::runtime_error("Not implemented");
+                random_split_feature(X, y, 
+                                     f_sample_indice, 
+                                     f_index,
+                                     f_partition_index,
+                                     f_partition_threshold,
+                                     f_improvement,
+                                     f_has_missing_value);
+            }
+            else {
+                throw std::invalid_argument(
+                    "Supported strategies are 'best' to choose the best "
+                    "split and 'random' to choose the best random split.");
             }
 
             if (f_improvement > improvement) {
@@ -260,7 +358,6 @@ public:
                 has_missing_value = f_has_missing_value;
                 // replace sample_indices_ with ordered f_sample_indices
                 std::copy(f_sample_indice.begin(), f_sample_indice.end(), &sample_indices_[start_]);
-                // std::cout << "f_improvement > improvement, feature = " << feature_index << ", improvement = "<< improvement << std::endl;
             }
         }
     }
