@@ -67,6 +67,7 @@ private:
     friend std::ostream& operator<<(std::ostream& os, const TreeNode& node){
         return os << "left child = " << node.left_child 
                   << ", right child = " << node.right_child 
+                  << ", feature index = " << node.feature_index
                   << ", threshold = " << node.threshold
                   << ", improvement = " << node.improvement
                   << ", histogram size = (" << node.histogram.size() 
@@ -211,10 +212,8 @@ public:
                         }
                     }
                 }
-
             }
         }
-        
     };
 
     void print_node_info() {
