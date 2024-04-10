@@ -2,7 +2,7 @@
 #define CORE_BUILDER_HPP_
 
 #include "../common/prereqs.hpp"
-#include "../utils/random.hpp"
+#include "../utility/random.hpp"
 
 #include "criterion.hpp"
 #include "splitter.hpp"
