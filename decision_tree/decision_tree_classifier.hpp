@@ -6,7 +6,8 @@
 #include "core/criterion.hpp"
 #include "core/splitter.hpp"
 #include "core/tree.hpp"
-#include "utils/random.hpp"
+#include "utility/math.hpp"
+#include "utility/random.hpp"
 
 namespace {
 
@@ -78,8 +79,6 @@ public:
 
     void fit(const std::vector<FeatureType>& X, 
              const std::vector<ClassType>& y) {
-        // NumFeaturesType num_features = feature_names_.size();
-        // NumOutputsType num_outputs = class_labels_.size();
         NumSamplesType num_samples = y.size() / num_outputs_;
 
         // check max_depth
@@ -187,25 +186,39 @@ public:
     };
 
     const std::vector<double> predict_proba(const std::vector<FeatureType>& X) {
-        
         NumSamplesType num_samples = X.size() / num_features_;
         std::vector<double> proba;
         builder_->tree_.predict_proba(X, num_samples, proba);
 
         return proba;
-    }
+    };
 
+    const std::vector<ClassType> predict(const std::vector<FeatureType>& X) {
+        NumSamplesType num_samples = X.size() / num_features_;
+        std::vector<double> proba;
+        builder_->tree_.predict_proba(X, num_samples, proba);
 
-    void print() {
-        builder_->tree_.print_node_info();
-        std::vector<double> f_importances(num_features_, 0.0);
-        builder_->tree_.compute_feature_importance(f_importances);
-        for (auto& importance : f_importances) {
-            std::cout << "importance = " << importance << " ";
+        std::vector<ClassType> label(num_samples * num_outputs_, 0);
+        for (IndexType i = 0; i < num_samples; ++i) {
+            for (IndexType o = 0; o < num_outputs_; ++o) {
+                label[i*num_outputs_ + o] = decisiontree::argmax<FeatureType, ClassType>(
+                    &proba[i*num_outputs_*max_num_classes_ + o*max_num_classes_], num_classes_list_[o]
+                );
+            }
         }
-        std::cout << std::endl;
-    }
 
+        return label;
+    };
+
+    const std::vector<double> compute_feature_importance() {
+        std::vector<double> f_importances;
+        builder_->tree_.compute_feature_importance(f_importances);
+        return f_importances;
+    };
+
+    void print_node_info() {
+        builder_->tree_.print_node_info();
+    };  
 
 };
 
