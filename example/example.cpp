@@ -186,7 +186,6 @@ int main() {
     clf.fit(X_train, y_train);
 
     std::vector<double> proba = clf.predict_proba(X_test);
-
     for (auto& p : proba) {
         std::cout << p << " ";
     }
