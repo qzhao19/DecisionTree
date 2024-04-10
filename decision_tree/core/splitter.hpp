@@ -2,8 +2,8 @@
 #define CORE_SPLITTER_HPP_
 
 #include "../common/prereqs.hpp"
-#include "../utils/random.hpp"
-#include "../utils/sort.hpp"
+#include "../utility/random.hpp"
+#include "../utility/sort.hpp"
 
 #include "criterion.hpp"
 
