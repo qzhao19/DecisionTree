@@ -185,11 +185,23 @@ int main() {
 
     clf.fit(X_train, y_train);
 
+    std::cout << "Predict proda" << std::endl;
     std::vector<double> proba = clf.predict_proba(X_test);
     for (auto& p : proba) {
+        for (std::size_t i = 0; i < feature_names.size(); ++i) {
+            std::cout << p << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "Predict y" << std::endl;
+    std::vector<long> y_pred = clf.predict(X_test);
+    for (auto& p : y_pred) {
         std::cout << p << " ";
     }
     std::cout << std::endl;
+
+
 
     // clf.print();
 
