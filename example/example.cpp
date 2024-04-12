@@ -187,9 +187,12 @@ int main() {
 
     std::cout << "Predict proda" << std::endl;
     std::vector<double> proba = clf.predict_proba(X_test);
-    for (auto& p : proba) {
-        for (std::size_t i = 0; i < feature_names.size(); ++i) {
-            std::cout << p << " ";
+
+    std::size_t num_classes = class_labels[0].size();
+    std::size_t num_samples = y_test.size();
+    for (std::size_t i = 0; i < num_samples; ++i) {
+        for (std::size_t j = 0; j < num_classes; ++j) {
+            std::cout << proba[i * num_classes + j] << " ";
         }
         std::cout << std::endl;
     }
@@ -201,8 +204,13 @@ int main() {
     }
     std::cout << std::endl;
 
+    std::vector<double> f_importances;
+    f_importances = clf.compute_feature_importance();
+    for (auto& importance : f_importances) {
+        std::cout << "importance = " << importance << " ";
+    }
+    std::cout << std::endl;
 
-
-    // clf.print();
+    clf.print_node_info();
 
 };
