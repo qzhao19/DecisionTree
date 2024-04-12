@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../decision_tree/utils/random.hpp"
+#include "../decision_tree/utility/random.hpp"
 #include "../decision_tree/core/criterion.hpp"
 #include "../decision_tree/core/splitter.hpp"
 
