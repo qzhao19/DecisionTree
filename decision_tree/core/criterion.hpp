@@ -16,26 +16,57 @@ private:
     std::vector<NumClassesType> num_classes_list_;
     std::vector<ClassWeightType> class_weight_;
 
-    // weighted histogram in the parent node
+    // weighted histogram in the parent node, it with non missing value, 
+    // and it with missing value
     std::vector<std::vector<HistogramType>> node_weighted_histogram_;
-    // weighted histogram in left node with values smaller than threshold
-    std::vector<std::vector<HistogramType>> left_weighted_histogram_;
-    // weighted histogram in right node with values bigger than threshold
-    std::vector<std::vector<HistogramType>> right_weighted_histogram_;
+    std::vector<std::vector<HistogramType>> node_weighted_histogram_value_;
+    std::vector<std::vector<HistogramType>> node_weighted_histogram_missing_;
 
-    // impurity of in the current node
+    // weighted histogram in left node with values smaller than threshold,
+    // it without missing value and it with missing value
+    std::vector<std::vector<HistogramType>> left_weighted_histogram_;
+    std::vector<std::vector<HistogramType>> left_weighted_histogram_value_;
+    std::vector<std::vector<HistogramType>> left_weighted_histogram_missing_;
+
+    // weighted histogram in right node with values bigger than threshold,
+    // it without missing value and it with missing value
+    std::vector<std::vector<HistogramType>> right_weighted_histogram_;
+    std::vector<std::vector<HistogramType>> right_weighted_histogram_value_;
+    std::vector<std::vector<HistogramType>> right_weighted_histogram_missing_;
+
+    // value impurity of in the current node, 
+    // same value without missing value and with missing value
     std::vector<double> node_impurity_;
+    std::vector<double> node_impurity_value_;
+    std::vector<double> node_impurity_missing_;
+
     // impurity of in the left node with values smaller than threshold
     std::vector<double> left_impurity_;
-    // impurity of in the right node with values bigger that threshold
+    std::vector<double> left_impurity_missing_;
+
+    // impurity of in the right node with values bigger that threshold,
+    // impurity with the missing value
     std::vector<double> right_impurity_;
+    std::vector<double> right_impurity_missing_;
 
-    // weighted number of samples in the parent node, left child and right child
+    // weighted number of samples in the parent node, 
+    // it without the missing value and with the missing value
     std::vector<HistogramType> node_weighted_num_samples_;
-    std::vector<HistogramType> left_weighted_num_samples_;
-    std::vector<HistogramType> right_weighted_num_samples_;
+    std::vector<HistogramType> node_weighted_num_samples_value_;
+    std::vector<HistogramType> node_weighted_num_samples_missing_;
 
+    // weighted number of samples in the left node
+    std::vector<HistogramType> left_weighted_num_samples_;
+    std::vector<HistogramType> left_weighted_num_samples_missing_;
+
+    // weighted number of samples in the right node
+    std::vector<HistogramType> right_weighted_num_samples_;
+    std::vector<HistogramType> right_weighted_num_samples_missing_;
+
+    // the position of threshold value and it at missing value
     SampleIndexType threshold_index_;
+    SampleIndexType threshold_index_missing_;
+
 
 protected:
     /**
@@ -72,18 +103,40 @@ public:
             class_weight_(class_weight), 
 
             // create and initialize histograms
-            node_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes_, 0.0)), 
+            node_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)), 
+            node_weighted_histogram_value_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            node_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+
             node_weighted_num_samples_(num_outputs, 0.0),
-            node_impurity_(num_outputs, 0.0), 
+            node_weighted_num_samples_value_(num_outputs, 0.0),
+            node_weighted_num_samples_missing_(num_outputs, 0.0),
 
-            left_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes_, 0.0)),
+            node_impurity_(num_outputs, 0.0),
+            node_impurity_value_(num_outputs, 0.0),
+            node_impurity_missing_(num_outputs, 0.0),
+
+            left_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            left_weighted_histogram_value_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            left_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+
             left_weighted_num_samples_(num_outputs, 0.0),
-            left_impurity_(num_outputs, 0.0), 
+            left_weighted_num_samples_missing_(num_outputs, 0.0),
 
-            right_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes_, 0.0)), 
+            left_impurity_(num_outputs, 0.0), 
+            left_impurity_missing_(num_outputs, 0.0),
+
+            right_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)), 
+            right_weighted_histogram_value_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            right_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            
             right_weighted_num_samples_(num_outputs, 0.0), 
+            right_weighted_num_samples_missing_(num_outputs, 0.0),
+
             right_impurity_(num_outputs, 0.0), 
-            threshold_index_(0) {};
+            right_impurity_missing_(num_outputs, 0.0),
+
+            threshold_index_(0),
+            threshold_index_missing_(0) {};
 
     ~Criterion() {};
 
@@ -123,6 +176,40 @@ public:
     }
 
     /**
+     * @brief Calculate the weighted class histogram for the current node
+     *        for the samples with missing value and non-missing values
+    */
+   void compute_node_histogram_missing(const std::vector<ClassType>& y, 
+                                       const std::vector<SampleIndexType>& sample_indices, 
+                                       SampleIndexType missing_value_index) {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+
+            std::vector<HistogramType> histogram(max_num_classes_, 0);
+            for (IndexType i = 0; i < missing_value_index; ++i) {
+                histogram[y[sample_indices[i] * num_outputs_ + o]]++;
+            }
+
+            // class_weight_ is set to be 1.0
+            HistogramType weighted_cnt;
+            node_weighted_num_samples_missing_[o] = 0.0;
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                weighted_cnt = class_weight_[o * max_num_classes_ + c] * histogram[c];
+                node_weighted_histogram_missing_[o][c] = weighted_cnt;
+                node_weighted_num_samples_missing_[o] += weighted_cnt;
+            }
+
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                node_weighted_histogram_value_[o][c] = node_weighted_histogram_[o][c] - 
+                                                       node_weighted_histogram_missing_[o][c];
+            }
+            node_weighted_num_samples_value_[o] = node_weighted_num_samples_[o] - 
+                                                  node_weighted_num_samples_missing_[o];
+        }
+        threshold_index_missing_ = missing_value_index;
+    }
+
+    /**
      * @brief Evaluate the impurity of the current node.
     */
     void compute_node_impurity() {
@@ -131,6 +218,17 @@ public:
             node_impurity_[o] = compute_impurity(node_weighted_histogram_[o]);
         }
     } 
+
+    /**
+     * @brief Evaluate the impurity of the current node for the 
+     *        samples with missing value and non-missing value
+    */
+    void compute_node_impurity_missing() {
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            node_impurity_value_[o] = compute_impurity(node_weighted_histogram_value_[o]);
+            node_impurity_missing_[o] = compute_impurity(node_weighted_histogram_missing_[o]);
+        }
+    }
 
     /**
      * @brief compute impurity for all outputs of samples for 
