@@ -221,7 +221,7 @@ public:
 
     /**
      * @brief Evaluate the impurity of the current node for the 
-     *        samples with missing value and non-missing value
+     *      samples with missing value and non-missing value
     */
     void compute_node_impurity_missing() {
         for (IndexType o = 0; o < num_outputs_; o++) {
@@ -232,7 +232,7 @@ public:
 
     /**
      * @brief compute impurity for all outputs of samples for 
-     *  right child and right child
+     *      left child and right child
     */
     void compute_children_impurity() {
         // for each output
@@ -243,8 +243,42 @@ public:
     }
 
     /**
+     * @brief compute impurity for all outputs of samples for 
+     *      left child and right child, passing on the samples 
+     *      with missing values
+    */
+    void compute_children_impurity_missing() {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            
+            // define histogram 
+            std::vector<HistogramType> histogram(node_weighted_histogram_missing_[o].size(), 0.0);
+
+            // samples that values are smaller than threshold and samples with missing values
+            for (IndexType c = 0; c < node_weighted_histogram_missing_[o].size(); ++c) {
+                histogram[c] = node_weighted_histogram_missing_[o][c] + left_weighted_histogram_[o][c];
+            }
+
+            left_impurity_missing_[o] = compute_impurity(histogram);
+            left_weighted_num_samples_missing_[o] = node_weighted_num_samples_missing_[o] + left_weighted_num_samples_[o];
+
+            // samples that values are greater than threshold and samples with missing values
+            for (IndexType c = 0; c < node_weighted_histogram_missing_[o].size(); ++c) {
+                histogram[c] = node_weighted_histogram_missing_[o][c] + right_weighted_histogram_[o][c];
+            }
+            right_impurity_missing_[o] = compute_impurity(histogram);
+            right_weighted_num_samples_missing_[o] = node_weighted_num_samples_missing_[o] + right_weighted_num_samples_[o];
+        }
+    }
+
+
+    
+
+
+    /**
      * @brief initialize class histograms for all outputs 
-     *  for using a threshold on samples with values,
+     *      for using a threshold on samples, all samples 
+     *      have values
     */
     void init_children_histogram() {
         // for each output
@@ -261,6 +295,29 @@ public:
         }
         // update current position
         threshold_index_ = 0;
+    }
+
+
+    /**
+     * @brief initialize class histograms for all outputs 
+     *      for using a threshold on samples, all samples 
+     *      have missing values and non_missing value
+    */
+    void init_children_histogram_missing() {
+        // for each output
+        for (IndexType o = 0; o < num_outputs_; o++) {
+            // init class histogram for left child to 0
+            // and for right child value to current node value
+            for (NumClassesType c = 0; c < num_classes_list_[o]; c++) {
+                left_weighted_histogram_[o][c] = 0.0;
+                right_weighted_histogram_[o][c] = node_weighted_histogram_value_[o][c];
+            }
+
+            left_weighted_num_samples_[o] = 0.0;
+            right_weighted_num_samples_[o] = node_weighted_num_samples_value_[o];
+        }
+        // update current position
+        threshold_index_ = threshold_index_missing_;
     }
 
     /**
