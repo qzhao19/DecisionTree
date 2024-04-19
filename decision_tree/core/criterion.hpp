@@ -176,8 +176,8 @@ public:
     }
 
     /**
-     * @brief Calculate the weighted class histogram for the current node
-     *      for the samples with missing value and non-missing values
+     * @brief compute the weighted class histogram for the samples with 
+     * missing values located in sample_indices[0:missing_value_index]
     */
    void compute_node_histogram_missing(const std::vector<ClassType>& y, 
                                        const std::vector<SampleIndexType>& sample_indices, 
@@ -351,7 +351,7 @@ public:
     }
 
     /**
-     * This method computes the improvement in impurity when a split occurs.
+     * @brief This method computes the improvement in impurity when a split occurs.
      * The weighted impurity improvement equation is the following:
      *          N_t / N * (impurity - N_t_R / N_t * right_impurity
      *                              - N_t_L / N_t * left_impurity)
@@ -372,7 +372,15 @@ public:
 
 
     /**
-     * computes the improvement in impurity in the case that samples with missing values.
+     * computes the improvement in impurity at the current node 
+     * for samples non-missing values.
+     *      N_t_no_m / N * (impurit_no_m - N_t_R / N_t_no_m * right_impurity
+     *                                   - N-t_L / N_t_no_m * left_impurity)
+     * N: total number of samples
+     * N_t_no_m: number of samples with non-missing at the current node
+     * impurit_no_m: impurity at the current node samples are non missing
+     * N_t_R / N_t_L: number of samples in the right/left child
+     * 
     */
     double compute_impurity_improvement_non_missing() {
         std::vector<double> impurity_improvement(num_outputs_, 0.0);
@@ -384,9 +392,9 @@ public:
         return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
     }
 
-
     /**
-     * 
+     * @brief computes the improvement in impurity at the left node
+     * for samples for missing values
     */
     double compute_left_impurity_improvement_missing() {
         std::vector<double> impurity_improvement(num_outputs_, 0.0);
@@ -396,9 +404,12 @@ public:
                     right_weighted_num_samples_[o] / node_weighted_num_samples_[o] * right_impurity_[o]);
         }
         return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
-
     }
 
+    /**
+     * @brief computes the improvement in impurity at the right node
+     * for samples for missing values
+    */
     double compute_right_impurity_improvement_missing() {
         std::vector<double> impurity_improvement(num_outputs_, 0.0);
         for (IndexType o = 0; o < num_outputs_; ++o) {
@@ -407,11 +418,7 @@ public:
                     right_weighted_num_samples_missing_[o] / node_weighted_num_samples_[o] * right_impurity_missing_[o]);
         }
         return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
-
     }
-
-
-
 
     /**
      * @brief interface method to return weighted histogram of the current node
@@ -455,6 +462,18 @@ public:
     const double get_right_impurity() {
         return std::accumulate(right_impurity_.begin(), 
                                right_impurity_.end(), 
+                               0.0) / num_outputs_;
+    }
+
+    const double get_node_impurity_missing() {
+        return std::accumulate(node_impurity_missing_.begin(), 
+                               node_impurity_missing_.end(), 
+                               0.0) / num_outputs_;
+    }
+
+    const double get_node_impurity_non_missing() {
+        return std::accumulate(node_impurity_non_missing_.begin(), 
+                               node_impurity_non_missing_.end(), 
                                0.0) / num_outputs_;
     }
 
