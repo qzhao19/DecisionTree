@@ -147,8 +147,15 @@ protected:
             return ;
         }
 
+        // if samples have missing value
         if (missing_value_index > 0) {
-            throw std::runtime_error("Not Implemented");
+            // compute histogram for samples with missing values
+            criterion_.compute_node_histogram_missing(y, sample_indices, missing_value_index);
+
+            criterion_.compute_node_impurity_missing();
+
+            criterion_.compute_impurity_improvement_missing();
+
         }
 
         // ---Split based on threshold---
