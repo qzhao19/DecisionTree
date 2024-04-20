@@ -370,6 +370,20 @@ public:
         return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
     }
 
+    /**
+     * computes the improvement in impurity at the current node 
+     * for samples with missing values.
+    */
+    double compute_impurity_improvement_missing() {
+        std::vector<double> impurity_improvement(num_outputs_, 0.0);
+        for (IndexType o = 0; o < num_outputs_; ++o) {
+            impurity_improvement[o] += (node_weighted_num_samples_[o] / num_samples_) * (node_impurity_[o] - 
+                node_weighted_num_samples_missing_[o] / node_weighted_num_samples_[o] * node_impurity_missing_[o] - 
+                    node_weighted_num_samples_non_missing_[o] / node_weighted_num_samples_[o] * node_impurity_non_missing_[o]);
+        }
+
+        return std::accumulate(impurity_improvement.begin(), impurity_improvement.end(), 0.0) / impurity_improvement.size();
+    }
 
     /**
      * computes the improvement in impurity at the current node 
