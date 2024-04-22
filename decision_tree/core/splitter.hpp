@@ -149,12 +149,19 @@ protected:
 
         // if samples have missing value
         if (missing_value_index > 0) {
-            // compute histogram for samples with missing values
+            // compute class histogram, impurity and improvement for samples with missing values
             criterion_.compute_node_histogram_missing(y, sample_indices, missing_value_index);
-
             criterion_.compute_node_impurity_missing();
+            improvement = criterion_.compute_impurity_improvement_missing();
+            // pass all samples with missing values to the left child
+            // pass all samples with non-missing values to the right child
+            has_missing_value = 0;
+            partition_threshold = std::numeric_limits<FeatureType>::quiet_NaN();
+            partition_index = start_ + missing_value_index;
 
-            criterion_.compute_impurity_improvement_missing();
+            if (criterion_.get_node_impurity_non_missing() < EPSILON) {
+                return;
+            }
 
         }
 
@@ -174,12 +181,12 @@ protected:
 
         // not constant feature
         if (fx_min + EPSILON < fx_max) {
-            
+
             if (missing_value_index == 0) {
                 criterion_.init_children_histogram();
             }
             else if (missing_value_index > 0) {
-                throw std::runtime_error("Not Implemented");
+                criterion_.init_children_histogram_non_missing();
             }
 
             // sort f_X and corresponding sample_indices by soring f_X
@@ -221,7 +228,7 @@ protected:
                     // std::cout << "impurity_improvement = " << impurity_improvement << std::endl;
                 }
                 else if (missing_value_index > 0) {
-                    throw std::runtime_error("Not Implemented");
+                    impurity_improvement = criterion_.compute_impurity_improvement_non_missing();
                 }
 
                 if (impurity_improvement > max_improvement) {
@@ -239,6 +246,7 @@ protected:
                 index = next_index;
             }
 
+            // samples without missing values
             if (missing_value_index == 0) {
                 partition_index = max_partition_index;
                 partition_threshold = max_partition_threshold;
@@ -246,7 +254,41 @@ protected:
                 has_missing_value = -1;
             }
             else if (missing_value_index > 0) {
-                throw std::runtime_error("Not Implemented");
+                // call compute_children_impurity_missing 
+                criterion_.compute_children_impurity_missing();
+
+                // compute left and right improvement for samples with missing values
+                double left_impurity_improvement = criterion_.compute_left_impurity_improvement_missing();
+                double right_impurity_improvement = criterion_.compute_right_impurity_improvement_missing();
+
+                if (left_impurity_improvement > right_impurity_improvement) {
+                    // add missing values to left child
+                    if (improvement < left_impurity_improvement) {
+                        improvement = left_impurity_improvement;
+                        partition_index = max_partition_index;
+                        partition_threshold = max_partition_threshold;
+                        has_missing_value = 0;
+                    }
+                }
+                else {
+                    // add missing values to left child
+                    if (improvement < right_impurity_improvement) {
+                        improvement = right_impurity_improvement;
+                        has_missing_value = 1;
+                        partition_threshold = max_partition_threshold;
+
+                        // move samples with missing values to the end of the sample vector
+                        std::vector<SampleIndexType> sample_indice_missing(&sample_indices[0], 
+                                                                           &sample_indices[missing_value_index]);
+                        std::copy(&sample_indices[missing_value_index], 
+                                  &sample_indices[num_samples], 
+                                  &sample_indices[0]);
+                        std::copy(&sample_indice_missing[0], 
+                                  &sample_indice_missing[missing_value_index], 
+                                  &sample_indices[num_samples - missing_value_index]);
+                        partition_index = max_partition_index - missing_value_index;
+                    }
+                }
             }
         }
     };
