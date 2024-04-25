@@ -5,7 +5,10 @@
 
 namespace decisiontree {
 
-class BaseCriterion {
+/**
+ * @brief 
+*/
+class Criterion {
 private:
     // weighted histogram in the parent node, it with non missing value, 
     // and it with missing value
@@ -71,12 +74,12 @@ protected:
     virtual double compute_impurity(const std::vector<HistogramType>& histogram) = 0;
 
 public:
-    BaseCriterion() {};
-    BaseCriterion(NumOutputsType num_outputs, 
-                  NumSamplesType num_samples, 
-                  NumClassesType max_num_classes, 
-                  std::vector<NumClassesType> num_classes_list, 
-                  std::vector<ClassWeightType> class_weight): num_outputs_(num_outputs), 
+    Criterion() {};
+    Criterion(NumOutputsType num_outputs, 
+              NumSamplesType num_samples, 
+              NumClassesType max_num_classes, 
+              std::vector<NumClassesType> num_classes_list, 
+              std::vector<ClassWeightType> class_weight): num_outputs_(num_outputs), 
             num_samples_(num_samples), 
             max_num_classes_(max_num_classes),
             num_classes_list_(num_classes_list),
@@ -118,7 +121,7 @@ public:
             threshold_index_(0),
             threshold_index_missing_(0) {};
 
-    ~BaseCriterion() {};
+    ~Criterion() {};
 
     /**
      * @brief weighted class histograms for current node.
