@@ -6,7 +6,7 @@
 
 namespace decisiontree {
 
-class GiniCriterion : public BaseCriterion {
+class Gini : public Criterion {
 private:
     NumOutputsType num_outputs_;
     NumSamplesType num_samples_;
@@ -35,17 +35,17 @@ protected:
     };
 
 public:
-    GiniCriterion() {};
-    GiniCriterion(NumOutputsType num_outputs, 
+    Gini() {};
+    Gini(NumOutputsType num_outputs, 
                   NumSamplesType num_samples, 
                   NumClassesType max_num_classes, 
                   std::vector<NumClassesType> num_classes_list, 
-                  std::vector<ClassWeightType> class_weight): BaseCriterion(num_outputs, 
+                  std::vector<ClassWeightType> class_weight): Criterion(num_outputs, 
                     num_samples, 
                     max_num_classes, 
                     num_classes_list, 
                     class_weight) {};
-    ~GiniCriterion() {};
+    ~Gini() {};
 
 };
 
