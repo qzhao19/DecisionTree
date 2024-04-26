@@ -14,6 +14,7 @@
 #include <string>
 #include <stdexcept>
 #include <utility>
+#include <unordered_set>
 #include <vector>
 
 using FeatureType = double;
@@ -35,5 +36,7 @@ using SampleIndexType = unsigned long;
 using TreeDepthType = unsigned long;
 
 double EPSILON = 1e-7;
+
+std::unordered_set<std::string> CRITERIA_CLF = {"gini", "entropy"};
 
 #endif // COMMON_PREREQS_HPP_
