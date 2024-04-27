@@ -3,7 +3,6 @@
 #include <gmock/gmock.h>
 
 #include "../decision_tree/utility/random.hpp"
-#include "../decision_tree/core/criterion.hpp"
 #include "../decision_tree/core/splitter.hpp"
 
 namespace {
@@ -68,17 +67,16 @@ public:
                                                             max_num_classes,
                                                             y, 
                                                             num_classes_list);
-        decisiontree::Criterion criterion(num_outputs, 
-                                          num_samples, 
-                                          max_num_classes,
-                                          num_classes_list, 
-                                          class_weight);
         decisiontree::RandomState random_state;
-        splitter = new decisiontree::Splitter(num_features, 
-                                              num_samples, 
-                                              max_num_features, 
-                                              "best", 
-                                              criterion, 
+        splitter = new decisiontree::Splitter(num_outputs,
+                                              num_samples,
+                                              num_features, 
+                                              max_num_features,
+                                              max_num_classes,
+                                              class_weight,
+                                              num_classes_list,                                               
+                                              "gini", 
+                                              "best",
                                               random_state);
     }
 
@@ -112,20 +110,20 @@ TEST_F(SplitterTest, InitNodeTest) {
     int has_missing_value = -1;
     
     splitter->init_node(y, 0, num_samples);
-    double impurity = splitter->criterion_.get_node_impurity();
+    double impurity = splitter->criterion_ptr_->get_node_impurity();
 
-    std::vector<std::vector<HistogramType>> node_weighted_histogram = splitter->criterion_.get_node_weighted_histogram();
+    std::vector<std::vector<HistogramType>> node_weighted_histogram = splitter->criterion_ptr_->get_node_weighted_histogram();
     std::vector<std::vector<double>> expect = {{3.0, 3.0, 3.0}};
     EXPECT_THAT(node_weighted_histogram, ::testing::ContainerEq(expect));
     EXPECT_PRED_FORMAT2(DoubleLE, impurity, double(2.0/3.0));
 
     splitter->split_node(X, y, feature_index, partition_index, partition_threshold, improvement, has_missing_value);
     
-    // std::cout << "feature_index= " << feature_index << std::endl;
-    // std::cout << "improvement = " << improvement << std::endl;
-    // std::cout << "partition_index = " << partition_index << std::endl;
-    // std::cout << "partition_threshold = " << partition_threshold << std::endl;
-    // std::cout << "has_missing_value = " << has_missing_value << std::endl;
+    std::cout << "feature_index= " << feature_index << std::endl;
+    std::cout << "improvement = " << improvement << std::endl;
+    std::cout << "partition_index = " << partition_index << std::endl;
+    std::cout << "partition_threshold = " << partition_threshold << std::endl;
+    std::cout << "has_missing_value = " << has_missing_value << std::endl;
 
 } 
 
