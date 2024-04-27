@@ -5,7 +5,9 @@
 #include "../utility/random.hpp"
 #include "../utility/sort.hpp"
 
-#include "criterion.hpp"
+#include "criterion/base.hpp"
+#include "criterion/gini.hpp"
+#include "criterion/entropy.hpp"
 
 namespace decisiontree {
 
@@ -14,10 +16,18 @@ namespace decisiontree {
 */
 class Splitter {
 private:
+    NumOutputsType num_outputs_;
+    NumClassesType max_num_classes_;
     NumFeaturesType num_features_;
     NumSamplesType num_samples_;
     NumFeaturesType max_num_features_;
+    
     std::string split_policy_;
+    std::string criterion_;
+
+    std::vector<NumClassesType> num_classes_list_;
+    std::vector<ClassWeightType> class_weight_;
+
     RandomState random_state_;
 
     SampleIndexType start_;
@@ -99,10 +109,10 @@ protected:
 
                 // no missing value
                 if (missing_value_index == 0) {
-                    criterion_.init_children_histogram();
-                    criterion_.update_children_histogram(y, sample_indices, next_index);
-                    criterion_.compute_children_impurity();
-                    double impurity_improvement = criterion_.compute_impurity_improvement();
+                    criterion_ptr_->init_children_histogram();
+                    criterion_ptr_->update_children_histogram(y, sample_indices, next_index);
+                    criterion_ptr_->compute_children_impurity();
+                    double impurity_improvement = criterion_ptr_->compute_impurity_improvement();
 
                     partition_index = start_ + next_index;
                     improvement = impurity_improvement;
@@ -150,16 +160,16 @@ protected:
         // if samples have missing value
         if (missing_value_index > 0) {
             // compute class histogram, impurity and improvement for samples with missing values
-            criterion_.compute_node_histogram_missing(y, sample_indices, missing_value_index);
-            criterion_.compute_node_impurity_missing();
-            improvement = criterion_.compute_impurity_improvement_missing();
+            criterion_ptr_->compute_node_histogram_missing(y, sample_indices, missing_value_index);
+            criterion_ptr_->compute_node_impurity_missing();
+            improvement = criterion_ptr_->compute_impurity_improvement_missing();
             // pass all samples with missing values to the left child
             // pass all samples with non-missing values to the right child
             has_missing_value = 0;
             partition_threshold = std::numeric_limits<FeatureType>::quiet_NaN();
             partition_index = start_ + missing_value_index;
 
-            if (criterion_.get_node_impurity_non_missing() < EPSILON) {
+            if (criterion_ptr_->get_node_impurity_non_missing() < EPSILON) {
                 return;
             }
 
@@ -183,10 +193,10 @@ protected:
         if (fx_min + EPSILON < fx_max) {
 
             if (missing_value_index == 0) {
-                criterion_.init_children_histogram();
+                criterion_ptr_->init_children_histogram();
             }
             else if (missing_value_index > 0) {
-                criterion_.init_children_histogram_non_missing();
+                criterion_ptr_->init_children_histogram_non_missing();
             }
 
             // sort f_X and corresponding sample_indices by soring f_X
@@ -216,19 +226,19 @@ protected:
                 next_index++;
 
                 // update class histograms from current indice to the new indice (correspond to threshold)
-                criterion_.update_children_histogram(y, sample_indices, next_index);
+                criterion_ptr_->update_children_histogram(y, sample_indices, next_index);
 
                 // compute impurity for left child and right child
-                criterion_.compute_children_impurity();
+                criterion_ptr_->compute_children_impurity();
                 
                 // compute impurity improvement
                 double impurity_improvement = 0.0;
                 if (missing_value_index == 0) {
-                    impurity_improvement = criterion_.compute_impurity_improvement();
+                    impurity_improvement = criterion_ptr_->compute_impurity_improvement();
                     // std::cout << "impurity_improvement = " << impurity_improvement << std::endl;
                 }
                 else if (missing_value_index > 0) {
-                    impurity_improvement = criterion_.compute_impurity_improvement_non_missing();
+                    impurity_improvement = criterion_ptr_->compute_impurity_improvement_non_missing();
                 }
 
                 if (impurity_improvement > max_improvement) {
@@ -240,7 +250,7 @@ protected:
                 }
                 
                 // if right node impurity is 0.0 stop
-                if (criterion_.get_right_impurity() < EPSILON) {
+                if (criterion_ptr_->get_right_impurity() < EPSILON) {
                     break;
                 }
                 index = next_index;
@@ -255,11 +265,11 @@ protected:
             }
             else if (missing_value_index > 0) {
                 // call compute_children_impurity_missing 
-                criterion_.compute_children_impurity_missing();
+                criterion_ptr_->compute_children_impurity_missing();
 
                 // compute left and right improvement for samples with missing values
-                double left_impurity_improvement = criterion_.compute_left_impurity_improvement_missing();
-                double right_impurity_improvement = criterion_.compute_right_impurity_improvement_missing();
+                double left_impurity_improvement = criterion_ptr_->compute_left_impurity_improvement_missing();
+                double right_impurity_improvement = criterion_ptr_->compute_right_impurity_improvement_missing();
 
                 if (left_impurity_improvement > right_impurity_improvement) {
                     // add missing values to left child
@@ -294,27 +304,93 @@ protected:
     };
 
 public:
-    Criterion criterion_;
+    std::shared_ptr<decisiontree::Criterion> criterion_ptr_;
 
 public:
+    // default constructor 
     Splitter() {};
-    Splitter(NumFeaturesType num_features, 
-             NumSamplesType num_samples, 
+
+    // copy constructor
+    Splitter(const Splitter& splitter): num_outputs_(splitter.num_outputs_), 
+        num_samples_(splitter.num_samples_), 
+        num_features_(splitter.num_features_),
+        max_num_features_(splitter.max_num_features_), 
+        max_num_classes_(splitter.max_num_classes_),
+        class_weight_(splitter.class_weight_), 
+        num_classes_list_(splitter.num_classes_list_),
+        criterion_(splitter.criterion_),
+        split_policy_(splitter.split_policy_),
+        random_state_(splitter.random_state_), 
+        // init s_ptr for criterion class and sample index array 
+        criterion_ptr_(splitter.criterion_ptr_),
+        sample_indices_(splitter.num_samples_),
+        start_(splitter.start_), 
+        end_(splitter.end_) {
+            std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
+            criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
+                                                                  num_samples_, 
+                                                                  max_num_classes_,
+                                                                  num_classes_list_, 
+                                                                  class_weight_);
+        };
+
+    // assignment constructor
+    Splitter& operator=(const Splitter& splitter) {
+        num_outputs_ = splitter.num_outputs_;
+        num_samples_ = splitter.num_samples_;
+        num_features_ = splitter.num_features_;
+        max_num_features_ = splitter.max_num_features_; 
+        max_num_classes_ = splitter.max_num_classes_;
+        class_weight_ = splitter.class_weight_;
+        num_classes_list_ = splitter.num_classes_list_;
+        criterion_ = splitter.criterion_;
+        split_policy_ = splitter.split_policy_;
+        random_state_ = splitter.random_state_; 
+        criterion_ptr_ = splitter.criterion_ptr_;
+        criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
+                                                              num_samples_, 
+                                                              max_num_classes_,
+                                                              num_classes_list_, 
+                                                              class_weight_);
+        sample_indices_ = splitter.sample_indices_;
+        std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
+        start_ = splitter.start_;
+        end_ = splitter.end_;
+        return *this;
+    }
+
+    // constructor with parameters
+    Splitter(NumOutputsType num_outputs,
+             NumSamplesType num_samples,
+             NumFeaturesType num_features, 
              NumFeaturesType max_num_features, 
+             NumClassesType max_num_classes, 
+             std::vector<ClassWeightType> class_weight,
+             std::vector<NumClassesType> num_classes_list, 
+             std::string criterion, 
              std::string split_policy, 
-             const Criterion& criterion, 
-             const RandomState& random_state): num_features_(num_features),
+             const RandomState& random_state): num_outputs_(num_outputs), 
         num_samples_(num_samples), 
+        num_features_(num_features),
         max_num_features_(max_num_features), 
-        split_policy_(split_policy),
+        max_num_classes_(max_num_classes),
+        class_weight_(class_weight), 
+        num_classes_list_(num_classes_list),
         criterion_(criterion),
+        split_policy_(split_policy),
         random_state_(random_state), 
         // init sample index array 
+        // criterion_ptr_(nullptr),
         sample_indices_(num_samples),
         start_(0), 
         end_(num_samples) {
-            // init the mask on the samples.
+            // init s_ptr for criterion class and sample index array
             std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
+            criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs, 
+                                                                  num_samples, 
+                                                                  max_num_classes,
+                                                                  num_classes_list, 
+                                                                  class_weight);
         };
     ~Splitter() {};
 
@@ -324,11 +400,10 @@ public:
     void init_node(const std::vector<ClassType>& y, 
                    SampleIndexType start, 
                    SampleIndexType end) {
-        
         start_ = start;
         end_ = end;
-        criterion_.compute_node_histogram(y, sample_indices_, start, end);
-        criterion_.compute_node_impurity();
+        criterion_ptr_->compute_node_histogram(y, sample_indices_, start, end);
+        criterion_ptr_->compute_node_impurity();
     }
 
 
@@ -410,7 +485,6 @@ public:
             }
         }
     }
-
 };
 
 } //namespace
