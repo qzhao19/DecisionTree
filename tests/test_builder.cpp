@@ -3,7 +3,6 @@
 #include <gmock/gmock.h>
 
 #include "../decision_tree/utility/random.hpp"
-#include "../decision_tree/core/criterion.hpp"
 #include "../decision_tree/core/splitter.hpp"
 #include "../decision_tree/core/builder.hpp"
 
@@ -74,18 +73,17 @@ public:
         unsigned long min_samples_split = 2;
         unsigned long min_samples_leaf = 1;
         unsigned long min_weight_leaf = 0;
-
-        decisiontree::RandomState random_state;
-        decisiontree::Criterion criterion(num_outputs, 
-                                          num_samples, 
-                                          max_num_classes,
-                                          num_classes_list, 
-                                          class_weight);
-        decisiontree::Splitter splitter(num_features, 
+        int random_seed = 0;
+        decisiontree::RandomState random_state(random_seed);
+        decisiontree::Splitter splitter(num_outputs,
                                         num_samples,
+                                        num_features, 
                                         max_num_features,
+                                        max_num_classes,
+                                        class_weight,
+                                        num_classes_list,                                               
+                                        "gini", 
                                         "best",
-                                        criterion,
                                         random_state);
         decisiontree::Tree tree(num_outputs, 
                                 num_features, 
@@ -123,14 +121,12 @@ TEST_F(DepthFirstTreeBuilder, BuildTest) {
     unsigned long num_samples = y.size();
 
     builder->build(X, y, num_samples);
-    builder->tree_.print_node_info();
+    // builder->tree_.print_node_info();
 
+    std::vector<double> expect = {0, 0, 1, 0};
     std::vector<double> f_importances;
     builder->tree_.compute_feature_importance(f_importances);
-    for (auto& importance : f_importances) {
-        std::cout << "importance = " << importance << " ";
-    }
-    std::cout << std::endl;
+    EXPECT_THAT(f_importances, ::testing::ContainerEq(expect));
 
 };
 
