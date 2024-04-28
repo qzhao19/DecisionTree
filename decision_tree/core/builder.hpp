@@ -4,7 +4,6 @@
 #include "../common/prereqs.hpp"
 #include "../utility/random.hpp"
 
-#include "criterion.hpp"
 #include "splitter.hpp"
 #include "tree.hpp"
 
@@ -20,7 +19,7 @@ private:
     NumSamplesType min_samples_leaf_;
     ClassWeightType min_weight_leaf_;
     std::vector<ClassWeightType> class_weight_;
-    Splitter splitter_;
+    decisiontree::Splitter splitter_;
     
     // node information stack
     // node_info_stk = [start, end, depth, parent_index, is_left]
@@ -44,15 +43,15 @@ private:
     };
 
 public:
-    Tree tree_;
+    decisiontree::Tree tree_;
     DepthFirstTreeBuilder() {};
     DepthFirstTreeBuilder(TreeDepthType max_depth, 
                           NumSamplesType min_samples_split, 
                           NumSamplesType min_samples_leaf, 
                           ClassWeightType min_weight_leaf, 
                           std::vector<ClassWeightType> class_weight, 
-                          const Splitter& splitter, 
-                          const Tree& tree): max_depth_(max_depth), 
+                          const decisiontree::Splitter& splitter, 
+                          const decisiontree::Tree& tree): max_depth_(max_depth), 
                     min_samples_split_(min_samples_split), 
                     min_samples_leaf_(min_samples_leaf), 
                     min_weight_leaf_(min_weight_leaf), 
@@ -80,8 +79,8 @@ public:
 
             // init weighted class histogram and inpurity for the current node
             splitter_.init_node(y, node_info.start, node_info.end);
-            std::vector<std::vector<HistogramType>> histogram = splitter_.criterion_.get_node_weighted_histogram();
-            double impurity = splitter_.criterion_.get_node_impurity();
+            std::vector<std::vector<HistogramType>> histogram = splitter_.criterion_ptr_->get_node_weighted_histogram();
+            double impurity = splitter_.criterion_ptr_->get_node_impurity();
 
             // get number of samples at the current node
             NumSamplesType num_node_samples = node_info.end - node_info.start;
