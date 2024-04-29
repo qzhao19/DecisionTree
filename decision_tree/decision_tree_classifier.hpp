@@ -3,7 +3,6 @@
 
 #include "common/prereqs.hpp"
 #include "core/builder.hpp"
-#include "core/criterion.hpp"
 #include "core/splitter.hpp"
 #include "core/tree.hpp"
 #include "utility/math.hpp"
@@ -11,12 +10,15 @@
 
 namespace {
 
+/**
+ * @brief 
+*/
 class DecisionTreeClassifier {
 private:
     std::string split_policy_;
-    std::string criterion_option_;
+    std::string criterion_;
 
-    int random_state_seed_;
+    int random_seed_;
     int max_depth_;
     int max_num_features_;
     int min_samples_split_;
@@ -33,7 +35,6 @@ private:
     std::vector<NumClassesType> num_classes_list_;
 
     decisiontree::RandomState random_state_;
-    decisiontree::Criterion criterion_;
     decisiontree::Splitter splitter_;
     decisiontree::Tree tree_;
     std::shared_ptr<decisiontree::DepthFirstTreeBuilder> builder_;
@@ -41,14 +42,14 @@ private:
 public:
     DecisionTreeClassifier(std::vector<std::string> feature_names,
                            std::vector<std::vector<std::string>> class_labels,
+                           int random_seed = 0,
                            int max_depth = 4, 
                            int max_num_features = -1, 
                            int min_samples_split = 2, 
                            int min_samples_leaf = 1,
                            double min_weight_fraction_leaf = 0.0, 
-                           int random_state_seed = -1,
                            bool class_balanced = true,
-                           std::string criterion_option = "gini", 
+                           std::string criterion = "gini", 
                            std::string split_policy = "best",
                            std::shared_ptr<std::vector<double>> class_weight_ptr = nullptr):
                         feature_names_(feature_names),
@@ -58,9 +59,9 @@ public:
                         min_samples_split_(min_samples_split),
                         min_samples_leaf_(min_samples_leaf),
                         min_weight_fraction_leaf_(min_weight_fraction_leaf),
-                        random_state_seed_(random_state_seed),
+                        random_seed_(random_seed),
                         class_balanced_(class_balanced),
-                        criterion_option_(criterion_option),
+                        criterion_(criterion),
                         split_policy_(split_policy),
                         class_weight_ptr_(class_weight_ptr), 
                         num_features_(feature_names.size()), 
@@ -126,8 +127,8 @@ public:
         else {
             if (class_weight_ptr_ == nullptr) {
                 throw std::invalid_argument(
-                    "If 'class_balanced' is false, must provide a pointer to a class weight."
-                    "Weights associated with classes in the form {weight, weight, ...}."
+                    "If 'class_balanced' is false, must provide a smart pointer to a class weight."
+                    "Weights associated with classes in the form {weight, weight, ..., }."
                 );
             }
             class_weight = *class_weight_ptr_;
@@ -144,33 +145,28 @@ public:
         }
 
         // init criterion
-        if (criterion_option_ == "gini") {
-            criterion_ = decisiontree::Criterion(num_outputs_, 
-                                                 num_samples, 
-                                                 max_num_classes_,
-                                                 num_classes_list_, 
-                                                 class_weight);
-        }
-        else if (criterion_option_ == "entropy") {
-            throw std::runtime_error("Not Implemented");
-        }
-        else {
+        if (CRITERIA_CLF.find(criterion_) == CRITERIA_CLF.end()) {
             throw std::invalid_argument("Criterion must be either 'gini' or 'entropy'.");
         }
 
-        if (random_state_seed_ == -1) {
+        if (random_seed_ == -1) {
             random_state_ = decisiontree::RandomState();
         }
         else {
-            random_state_ = decisiontree::RandomState(random_state_seed_);
+            random_state_ = decisiontree::RandomState(random_seed_);
         }
 
-        splitter_ = decisiontree::Splitter(num_features_, 
+        splitter_ = decisiontree::Splitter(num_outputs_,  
                                            num_samples,
+                                           num_features_,
                                            max_num_features,
-                                           split_policy_,
+                                           max_num_classes_,
+                                           class_weight,
+                                           num_classes_list_,
                                            criterion_,
+                                           split_policy_,
                                            random_state_);
+        
         tree_ = decisiontree::Tree(num_outputs_, 
                                    num_features_, 
                                    num_classes_list_);
