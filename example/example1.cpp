@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../decision_tree/decision_tree_classifier.hpp"
+#include "../decision_tree/decision_tree.hpp"
 
 int main() {
     std::vector<std::vector<std::string>> class_labels = {{"setosa", "versicolor", "virginica"}};
@@ -181,7 +181,7 @@ int main() {
     int max_thresholds = 0;
     int random_state = 0;
 
-    DecisionTreeClassifier clf(feature_names, class_labels);
+    decisiontree::DecisionTreeClassifier clf(feature_names, class_labels);
 
     clf.fit(X_train, y_train);
 
