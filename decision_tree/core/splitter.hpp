@@ -1,9 +1,9 @@
 #ifndef CORE_SPLITTER_HPP_
 #define CORE_SPLITTER_HPP_
 
-#include "../common/prereqs.hpp"
-#include "../utility/random.hpp"
-#include "../utility/sort.hpp"
+#include "common/prereqs.hpp"
+#include "utility/random.hpp"
+#include "utility/sort.hpp"
 
 #include "criterion/base.hpp"
 #include "criterion/gini.hpp"
