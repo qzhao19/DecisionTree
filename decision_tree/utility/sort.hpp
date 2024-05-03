@@ -1,5 +1,7 @@
-#ifndef UTILITY_SORT_HPP
-#define UTILITY_SORT_HPP
+#ifndef UTILITY_SORT_HPP_
+#define UTILITY_SORT_HPP_
+
+#include "common/prereqs.hpp"
 
 namespace decisiontree {
 
@@ -51,4 +53,4 @@ void sort(std::vector<DataType>& x,
 };
 
 } // namespace 
-#endif // UTILITY_SORT_HPP
+#endif // UTILITY_SORT_HPP_
