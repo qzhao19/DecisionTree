@@ -1,7 +1,7 @@
-#ifndef UTILITY_RANDOM_HPP
-#define UTILITY_RANDOM_HPP
+#ifndef UTILITY_RANDOM_HPP_
+#define UTILITY_RANDOM_HPP_
 
-#include "../common/prereqs.hpp"
+#include "common/prereqs.hpp"
 
 namespace decisiontree {
 
@@ -51,4 +51,4 @@ public:
 
 } //namespace
 
-#endif // UTILITY_RANDOM_HPP
+#endif // UTILITY_RANDOM_HPP_
