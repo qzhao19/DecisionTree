@@ -1,7 +1,7 @@
-#ifndef UTILITY_MATH_HPP
-#define UTILITY_MATH_HPP
+#ifndef UTILITY_MATH_HPP_
+#define UTILITY_MATH_HPP_
 
-#include "../common/prereqs.hpp"
+#include "common/prereqs.hpp"
 
 namespace decisiontree {
 
@@ -20,4 +20,4 @@ ClassType argmax(FeatureType* x, long size) {
 };
 
 }
-#endif // #ifndef UTILITY_RANDOM_HPP
+#endif // UTILITY_MATH_HPP_
