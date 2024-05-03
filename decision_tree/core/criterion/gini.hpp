@@ -1,7 +1,7 @@
 #ifndef CORE_CRITERION_GINI_HPP_
 #define CORE_CRITERION_GINI_HPP_
 
-#include "../../common/prereqs.hpp"
+#include "common/prereqs.hpp"
 #include "base.hpp"
 
 namespace decisiontree {
