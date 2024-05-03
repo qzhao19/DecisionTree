@@ -1,8 +1,8 @@
 #ifndef CORE_BUILDER_HPP_
 #define CORE_BUILDER_HPP_
 
-#include "../common/prereqs.hpp"
-#include "../utility/random.hpp"
+#include "common/prereqs.hpp"
+#include "utility/random.hpp"
 
 #include "splitter.hpp"
 #include "tree.hpp"
