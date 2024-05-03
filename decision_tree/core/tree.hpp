@@ -1,7 +1,7 @@
 #ifndef CORE_TREE_HPP_
 #define CORE_TREE_HPP_
 
-#include "../common/prereqs.hpp"
+#include "common/prereqs.hpp"
 
 namespace decisiontree {
 
