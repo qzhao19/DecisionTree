@@ -1,12 +1,12 @@
-#ifndef DECISION_TREE_CLASSIFIER_HPP_
-#define DECISION_TREE_CLASSIFIER_HPP_
+#ifndef ALGORITHM_DECISION_TREE_CLASSIFIER_HPP_
+#define ALGORITHM_DECISION_TREE_CLASSIFIER_HPP_
 
-#include "../common/prereqs.hpp"
-#include "../core/builder.hpp"
-#include "../core/splitter.hpp"
-#include "../core/tree.hpp"
-#include "../utility/math.hpp"
-#include "../utility/random.hpp"
+#include "common/prereqs.hpp"
+#include "core/builder.hpp"
+#include "core/splitter.hpp"
+#include "core/tree.hpp"
+#include "utility/math.hpp"
+#include "utility/random.hpp"
 
 namespace decisiontree {
 
@@ -220,4 +220,4 @@ public:
 
 } // namespace
 
-#endif // DECISION_TREE_CLASSIFIER_HPP_
+#endif // ALGORITHM_DECISION_TREE_CLASSIFIER_HPP_
