@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../decision_tree/decision_tree.hpp"
+#include "decision_tree/decision_tree.hpp"
 
 int main() {
     std::vector<std::vector<std::string>> class_labels = {{"setosa", "versicolor", "virginica"}};
