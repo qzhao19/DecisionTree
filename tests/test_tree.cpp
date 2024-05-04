@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../decision_tree/core/tree.hpp"
+#include "decision_tree/core/tree.hpp"
 
 namespace {
 

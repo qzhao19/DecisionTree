@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../decision_tree/utility/sort.hpp"
+#include "decision_tree/utility/sort.hpp"
 
 namespace {
 
