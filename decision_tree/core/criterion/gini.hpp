@@ -24,14 +24,14 @@ protected:
     double compute_impurity(const std::vector<HistogramType>& histogram) override {
         double cnt;
         double sum_cnt = 0.0;
-        double sum_cnt_squared = 0.0;
+        double sum_cnt_sq = 0.0;
 
         for (IndexType c = 0; c < histogram.size(); ++c) {
             cnt = static_cast<double>(histogram[c]);
             sum_cnt += cnt;
-            sum_cnt_squared += cnt * cnt;
+            sum_cnt_sq += cnt * cnt;
         }
-        return (sum_cnt > 0.0) ? (1.0 - sum_cnt_squared / (sum_cnt*sum_cnt)) : 0.0;
+        return (sum_cnt > 0.0) ? (1.0 - sum_cnt_sq / (sum_cnt*sum_cnt)) : 0.0;
     };
 
 public:
