@@ -178,7 +178,32 @@ public:
 
                 while (nodes_[node_index.index].left_child > 0 && nodes_[node_index.index].right_child > 0) {
                     if (std::isnan(X[i * num_features_ + nodes_[node_index.index].feature_index])) {
-                        throw std::runtime_error("Not implemented");
+                        // split criterion which includes missing values
+                        // suppose has_missing_value = 0, missing value is at left node
+                        // has_missing_value = 1, missing value is at right node
+                        if (nodes_[node_index.index].has_missing_value == 0) {
+                            node_index.index = nodes_[node_index.index].left_child;
+                        }
+                        else if (nodes_[node_index.index].has_missing_value == 1) {
+                            node_index.index = nodes_[node_index.index].right_child;
+                        }
+                        else {
+                            // split criterion which does not include missing values
+                            IndexInfo node_index2 = node_index;
+                            node_index2.index = nodes_[node_index.index].right_child;
+                            HistogramType num_rights = std::accumulate(nodes_[node_index2.index].histogram[0].begin(),
+                                                                       nodes_[node_index2.index].histogram[0].end(),
+                                                                       0.0);
+
+                            node_index.index = nodes_[node_index.index].left_child;
+                            HistogramType num_lefts = std::accumulate(nodes_[node_index.index].histogram[0].begin(),
+                                                                       nodes_[node_index.index].histogram[0].end(),
+                                                                       0.0);
+                            
+                            node_index.weight *= num_lefts / (num_lefts + num_rights);
+                            node_index2.weight *= num_rights / (num_lefts + num_rights);
+                            node_index_stk.emplace(node_index2);
+                        }
                     } 
                     else {
                         // no missing samples
