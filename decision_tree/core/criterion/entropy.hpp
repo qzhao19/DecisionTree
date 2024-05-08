@@ -7,23 +7,28 @@
 namespace decisiontree {
 
 class Entropy : public Criterion {
-private:
-    NumOutputsType num_outputs_;
-    NumSamplesType num_samples_;
-    NumClassesType max_num_classes_;
-    std::vector<NumClassesType> num_classes_list_;
-    std::vector<ClassWeightType> class_weight_;
-
 protected:
     /**
      * @brief override method to compute impurity of a weighted class histogram
-     * The Gini Index is then defined as:
-     *  - index = 1 - sum_{k=0}^{k-1} count_k ** 2, where 
+     * The Entropy is then defined as:
+     *  - count_k = 1 / Nm \sum_{x_i in Rm} I(yi = k) 
+     *  - cross-entropy = -\sum_{k=0}^{K-1} count_k log(count_k)
+     *  
      * @param histogram sum of the weighted count of each label
     */
     double compute_impurity(const std::vector<HistogramType>& histogram) override {
-        
-        return 0.0;
+        double cnt;
+        double sum_cnt = 0.0;
+        double entropy = 0.0;
+        for (IndexType c = 0; c < histogram.size(); ++c) {
+            cnt = static_cast<double>(histogram[c]);
+            sum_cnt += cnt;
+            if (cnt > 0.0) {
+                cnt /= sum_cnt;
+                entropy -= cnt * std::log2(cnt);
+            }
+        }
+        return entropy;
     };
 
 public:
