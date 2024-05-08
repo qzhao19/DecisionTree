@@ -10,6 +10,12 @@ namespace decisiontree {
 */
 class Criterion {
 private:
+    NumOutputsType num_outputs_;
+    NumSamplesType num_samples_;
+    NumClassesType max_num_classes_;
+    std::vector<NumClassesType> num_classes_list_;
+    std::vector<ClassWeightType> class_weight_;
+
     // weighted histogram in the parent node, it with non missing value, 
     // and it with missing value
     std::vector<std::vector<HistogramType>> node_weighted_histogram_;
@@ -28,6 +34,12 @@ private:
     std::vector<std::vector<HistogramType>> right_weighted_histogram_missing_;
     std::vector<std::vector<HistogramType>> right_weighted_histogram_non_missing_;
 
+    // weighted number of samples in the parent node, 
+    // it without the missing value and with the missing value
+    std::vector<HistogramType> node_weighted_num_samples_;
+    std::vector<HistogramType> node_weighted_num_samples_missing_;
+    std::vector<HistogramType> node_weighted_num_samples_non_missing_;
+
     // value impurity of in the current node, 
     // same value without missing value and with missing value
     std::vector<double> node_impurity_;
@@ -43,12 +55,6 @@ private:
     std::vector<double> right_impurity_;
     std::vector<double> right_impurity_missing_;
 
-    // weighted number of samples in the parent node, 
-    // it without the missing value and with the missing value
-    std::vector<HistogramType> node_weighted_num_samples_;
-    std::vector<HistogramType> node_weighted_num_samples_missing_;
-    std::vector<HistogramType> node_weighted_num_samples_non_missing_;
-
     // weighted number of samples in the left node
     std::vector<HistogramType> left_weighted_num_samples_;
     std::vector<HistogramType> left_weighted_num_samples_missing_;
@@ -62,12 +68,6 @@ private:
     SampleIndexType threshold_index_missing_;
 
 protected:
-    NumOutputsType num_outputs_;
-    NumSamplesType num_samples_;
-    NumClassesType max_num_classes_;
-    std::vector<NumClassesType> num_classes_list_;
-    std::vector<ClassWeightType> class_weight_;
-    
     /**
      * @brief impurity of a weighted class histogram
     */
@@ -90,6 +90,14 @@ public:
             node_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
             node_weighted_histogram_non_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
 
+            left_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            left_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            left_weighted_histogram_non_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+
+            right_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)), 
+            right_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            right_weighted_histogram_non_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+
             node_weighted_num_samples_(num_outputs, 0.0),
             node_weighted_num_samples_missing_(num_outputs, 0.0),
             node_weighted_num_samples_non_missing_(num_outputs, 0.0),
@@ -98,25 +106,17 @@ public:
             node_impurity_missing_(num_outputs, 0.0),
             node_impurity_non_missing_(num_outputs, 0.0),
 
-            left_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
-            left_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
-            left_weighted_histogram_non_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
+            left_impurity_(num_outputs, 0.0), 
+            left_impurity_missing_(num_outputs, 0.0),
+
+            right_impurity_(num_outputs, 0.0), 
+            right_impurity_missing_(num_outputs, 0.0),
 
             left_weighted_num_samples_(num_outputs, 0.0),
             left_weighted_num_samples_missing_(num_outputs, 0.0),
 
-            left_impurity_(num_outputs, 0.0), 
-            left_impurity_missing_(num_outputs, 0.0),
-
-            right_weighted_histogram_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)), 
-            right_weighted_histogram_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
-            right_weighted_histogram_non_missing_(num_outputs, std::vector<HistogramType>(max_num_classes, 0.0)),
-
             right_weighted_num_samples_(num_outputs, 0.0), 
             right_weighted_num_samples_missing_(num_outputs, 0.0),
-
-            right_impurity_(num_outputs, 0.0), 
-            right_impurity_missing_(num_outputs, 0.0),
 
             threshold_index_(0),
             threshold_index_missing_(0) {};
