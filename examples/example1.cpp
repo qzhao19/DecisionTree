@@ -175,13 +175,25 @@ int main() {
     std::vector<long> y_test = {0, 0, 0, 1, 1, 1, 2, 2, 2};
 
     // Hyperparameters
-    std::string class_balance  = "balanced";
+    int random_seed = 0;
     int max_depth = 4;
-    int max_features = 0;
-    int max_thresholds = 0;
-    int random_state = 0;
+    int max_num_features = -1;
+    int min_samples_split = 2;
+    int min_samples_leaf = 1;
+    double min_weight_fraction_leaf = 0.0;
+    bool class_balanced = true;
+    std::string criterion = "gini"; 
+    std::string split_policy = "best";
 
-    decisiontree::DecisionTreeClassifier clf(feature_names, class_labels);
+    decisiontree::DecisionTreeClassifier clf(feature_names, class_labels, 
+                                             random_seed, max_depth, 
+                                             max_num_features, 
+                                             min_samples_split, 
+                                             min_samples_leaf, 
+                                             min_weight_fraction_leaf, 
+                                             class_balanced, 
+                                             criterion, 
+                                             split_policy);
 
     clf.fit(X_train, y_train);
 
