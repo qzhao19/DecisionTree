@@ -35,8 +35,8 @@ using SampleIndexType = unsigned long;
 
 using TreeDepthType = unsigned long;
 
-double EPSILON = 1e-7;
+const double EPSILON = 1e-7;
 
-std::unordered_set<std::string> CRITERIA_CLF = {"gini", "entropy"};
+const std::unordered_set<std::string> CRITERIA_CLF = {"gini", "entropy"};
 
 #endif // COMMON_PREREQS_HPP_
