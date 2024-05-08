@@ -7,13 +7,6 @@
 namespace decisiontree {
 
 class Gini : public Criterion {
-private:
-    NumOutputsType num_outputs_;
-    NumSamplesType num_samples_;
-    NumClassesType max_num_classes_;
-    std::vector<NumClassesType> num_classes_list_;
-    std::vector<ClassWeightType> class_weight_;
-
 protected:
     /**
      * @brief override method to compute impurity of a weighted class histogram
