@@ -39,4 +39,6 @@ const double EPSILON = 1e-7;
 
 const std::unordered_set<std::string> CRITERIA_CLF = {"gini", "entropy"};
 
+const std::unordered_set<std::string> SPLIT_STRATEGY = {"best", "random"};
+
 #endif // COMMON_PREREQS_HPP_
