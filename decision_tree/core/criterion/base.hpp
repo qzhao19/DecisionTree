@@ -121,7 +121,7 @@ public:
             threshold_index_(0),
             threshold_index_missing_(0) {};
 
-    ~Criterion() {};
+    virtual ~Criterion() {};
 
     /**
      * @brief weighted class histograms for current node.
