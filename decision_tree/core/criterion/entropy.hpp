@@ -38,10 +38,10 @@ public:
             NumClassesType max_num_classes, 
             std::vector<NumClassesType> num_classes_list, 
             std::vector<ClassWeightType> class_weight): Criterion(num_outputs, 
-            num_samples, 
-            max_num_classes, 
-            num_classes_list, 
-            class_weight) {};
+                num_samples, 
+                max_num_classes, 
+                num_classes_list, 
+                class_weight) {};
     ~Entropy() {};
 
 };
