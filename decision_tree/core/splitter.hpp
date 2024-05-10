@@ -17,17 +17,14 @@ namespace decisiontree {
 class Splitter {
 private:
     NumOutputsType num_outputs_;
-    NumClassesType max_num_classes_;
-    NumFeaturesType num_features_;
     NumSamplesType num_samples_;
+    NumFeaturesType num_features_;
     NumFeaturesType max_num_features_;
-    
-    std::string split_policy_;
-    std::string criterion_;
-
-    std::vector<NumClassesType> num_classes_list_;
+    NumClassesType max_num_classes_;
     std::vector<ClassWeightType> class_weight_;
-
+    std::vector<NumClassesType> num_classes_list_;
+    std::string criterion_;
+    std::string split_policy_;
     RandomState random_state_;
 
     SampleIndexType start_;
@@ -83,7 +80,7 @@ protected:
         // ---Split just based on missing values---
         if ((missing_value_index > 0) && 
             ((fx_min + EPSILON > fx_max) || 
-             (random_state_.uniform_int(0, num_samples) < (missing_value_index-1)))) {
+             (static_cast<SampleIndexType>(random_state_.uniform_int(0, num_samples)) < (missing_value_index-1)))) {
             throw std::runtime_error("Not Implemented");
         }
         // ---Split based on threshold---
@@ -191,7 +188,6 @@ protected:
 
         // not constant feature
         if (fx_min + EPSILON < fx_max) {
-
             if (missing_value_index == 0) {
                 criterion_ptr_->init_children_histogram();
             }
@@ -322,16 +318,25 @@ public:
         split_policy_(splitter.split_policy_),
         random_state_(splitter.random_state_), 
         // init s_ptr for criterion class and sample index array 
-        criterion_ptr_(splitter.criterion_ptr_),
-        sample_indices_(splitter.num_samples_),
         start_(splitter.start_), 
-        end_(splitter.end_) {
+        end_(splitter.end_),
+        sample_indices_(splitter.num_samples_),
+        criterion_ptr_(splitter.criterion_ptr_) {
             std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
-            criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
-                                                                  num_samples_, 
-                                                                  max_num_classes_,
-                                                                  num_classes_list_, 
-                                                                  class_weight_);
+            if (criterion_ == "gini") {
+                criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
+                                                                      num_samples_, 
+                                                                      max_num_classes_,
+                                                                      num_classes_list_, 
+                                                                      class_weight_);
+            }
+            else if (criterion_ == "entropy") {
+                criterion_ptr_ = std::make_shared<decisiontree::Entropy>(num_outputs_, 
+                                                                        num_samples_, 
+                                                                        max_num_classes_,
+                                                                        num_classes_list_, 
+                                                                        class_weight_);
+            }
         };
 
     // assignment constructor
@@ -346,16 +351,26 @@ public:
         criterion_ = splitter.criterion_;
         split_policy_ = splitter.split_policy_;
         random_state_ = splitter.random_state_; 
-        criterion_ptr_ = splitter.criterion_ptr_;
-        criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
-                                                              num_samples_, 
-                                                              max_num_classes_,
-                                                              num_classes_list_, 
-                                                              class_weight_);
-        sample_indices_ = splitter.sample_indices_;
-        std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
+        
         start_ = splitter.start_;
         end_ = splitter.end_;
+        sample_indices_ = splitter.sample_indices_;
+        std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
+        criterion_ptr_ = splitter.criterion_ptr_;
+        if (criterion_ == "gini") {
+            criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
+                                                                num_samples_, 
+                                                                max_num_classes_,
+                                                                num_classes_list_, 
+                                                                class_weight_);
+            }
+        else if (criterion_ == "entropy") {
+            criterion_ptr_ = std::make_shared<decisiontree::Entropy>(num_outputs_, 
+                                                                    num_samples_, 
+                                                                    max_num_classes_,
+                                                                    num_classes_list_, 
+                                                                    class_weight_);
+        }
         return *this;
     }
 
@@ -380,17 +395,26 @@ public:
         split_policy_(split_policy),
         random_state_(random_state), 
         // init sample index array 
-        // criterion_ptr_(nullptr),
-        sample_indices_(num_samples),
         start_(0), 
-        end_(num_samples) {
+        end_(num_samples),
+        sample_indices_(num_samples),
+        criterion_ptr_(nullptr) {
             // init s_ptr for criterion class and sample index array
             std::iota(sample_indices_.begin(), sample_indices_.end(), 0);
-            criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs, 
-                                                                  num_samples, 
-                                                                  max_num_classes,
-                                                                  num_classes_list, 
-                                                                  class_weight);
+            if (criterion_ == "gini") {
+                criterion_ptr_ = std::make_shared<decisiontree::Gini>(num_outputs_, 
+                                                                    num_samples_, 
+                                                                    max_num_classes_,
+                                                                    num_classes_list_, 
+                                                                    class_weight_);
+            }
+            else if (criterion_ == "entropy") {
+                criterion_ptr_ = std::make_shared<decisiontree::Entropy>(num_outputs_, 
+                                                                        num_samples_, 
+                                                                        max_num_classes_,
+                                                                        num_classes_list_, 
+                                                                        class_weight_);
+            }
         };
     ~Splitter() {};
 
@@ -468,12 +492,7 @@ public:
                                      f_improvement,
                                      f_has_missing_value);
             }
-            else {
-                throw std::invalid_argument(
-                    "Supported strategies are 'best' to choose the best "
-                    "split and 'random' to choose the best random split.");
-            }
-
+            
             if (f_improvement > improvement) {
                 feature_index = f_index;
                 partition_index = f_partition_index;
