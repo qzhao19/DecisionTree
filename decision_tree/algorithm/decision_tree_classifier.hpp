@@ -11,13 +11,45 @@
 namespace decisiontree {
 
 /**
- * @brief 
+ * @file decision_tree_class.hpp
+ * 
+ * @brief A decision tree classifier.
+ * 
+ * @param feature_names 1d array of string
+ *  which refers names to use for elements of input data given.
+ * @param class_labels 2d array of shape (num_outputs, num_classes) 
+ *  which is 2d arrays of class labels, e.g {{<class1>, <class2>, ...}}
+ * @param random_seed int default=0
+ *  controls the randomness of the estimator
+ * @param max_depth int default=4,
+ *  the maximum depth of the tree
+ * @param max_num_features int default=-1,
+ *  the number of features to consider when looking for the best split
+ *  if -1, then max_num_features = num_features, else consider value 
+ *  given by the user.
+ * @param min_samples_split int default=2
+ *  the minimum number of samples required to split an internal node.
+ * @param min_samples_leaf int default=1
+ *  the minimum number of samples required to be at a leaf node.
+ * @param min_weight_fraction_leaf double default=0.0
+ *  the minimum weighted fraction of the sum total of weights required to be at a leaf node
+ * @param class_balanced boolean default=true
+ *  indicate whether the class is balanced or not, if set to true, it uses the values 
+ *  of y to automatically adjust weights inversely proportional to class frequencies 
+ *  in the input data as n_samples / (n_classes * bincount(y)), else the user must provide
+ *  a self-defined class weights
+ * @param criterion {"gini", "entropy"} default=gini
+ *  the criterion to measure the quality of a split
+ * @param split_policy {"random", "best"} default=best
+ *  the strategy used to choose the split at each node.
+ * @param class_weight_ptr_ smart pointer to the class weight
+ *  if class_balanced=false, class_weight_ptr_ must be defined to
+ *  point to the self-defined class weight in the form {w, w, ..., }
 */
 class DecisionTreeClassifier {
 private:
-    std::string split_policy_;
-    std::string criterion_;
-
+    std::vector<std::string> feature_names_;
+    std::vector<std::vector<std::string>> class_labels_;
     int random_seed_;
     int max_depth_;
     int max_num_features_;
@@ -25,8 +57,8 @@ private:
     int min_samples_leaf_;
     double min_weight_fraction_leaf_;
     bool class_balanced_;
-    std::vector<std::string> feature_names_;
-    std::vector<std::vector<std::string>> class_labels_;
+    std::string criterion_;
+    std::string split_policy_;
     std::shared_ptr<std::vector<double>> class_weight_ptr_;
 
     NumFeaturesType num_features_;
@@ -54,12 +86,12 @@ public:
                            std::shared_ptr<std::vector<double>> class_weight_ptr = nullptr):
                         feature_names_(feature_names),
                         class_labels_(class_labels),
+                        random_seed_(random_seed),
                         max_depth_(max_depth),
                         max_num_features_(max_num_features),
                         min_samples_split_(min_samples_split),
                         min_samples_leaf_(min_samples_leaf),
                         min_weight_fraction_leaf_(min_weight_fraction_leaf),
-                        random_seed_(random_seed),
                         class_balanced_(class_balanced),
                         criterion_(criterion),
                         split_policy_(split_policy),
@@ -147,6 +179,13 @@ public:
         // init criterion
         if (CRITERIA_CLF.find(criterion_) == CRITERIA_CLF.end()) {
             throw std::invalid_argument("Criterion must be either 'gini' or 'entropy'.");
+        }
+
+        // check split strategy
+        if (SPLIT_STRATEGY.find(split_policy_) == SPLIT_STRATEGY.end()) {
+            throw std::invalid_argument(
+                "Supported strategies are 'best' to choose the best "
+                "split and 'random' to choose the best random split.");
         }
 
         if (random_seed_ == -1) {
