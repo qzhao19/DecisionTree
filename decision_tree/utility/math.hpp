@@ -6,7 +6,7 @@
 namespace decisiontree {
 
 template<typename FeatureType, typename ClassType>
-ClassType argmax(FeatureType* x, long size) {
+ClassType argmax(FeatureType* x, unsigned long size) {
     ClassType max_index = 0;
     FeatureType max_value = x[max_index];
 
