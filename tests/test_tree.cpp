@@ -34,11 +34,7 @@ public:
 
         std::vector<unsigned long> num_classes_list = calculate_num_classes_list(classes);
         unsigned long num_outputs = classes.size();
-        unsigned long num_samples = y.size() / num_outputs;
         unsigned long num_features = features.size();
-        unsigned long max_num_features = 0;
-        unsigned long max_num_classes = *std::max_element(begin(num_classes_list),
-                                                          end(num_classes_list));
 
         tree_ = new decisiontree::Tree(num_outputs, num_features, num_classes_list);
 
@@ -49,7 +45,6 @@ public:
             tree_ = nullptr;
         }
     }
-
     decisiontree::Tree* tree_;
 };
 
