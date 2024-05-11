@@ -65,10 +65,10 @@ public:
                                                             y, 
                                                             num_classes_list);
         gini = new decisiontree::Gini(num_outputs, 
-                                                num_samples, 
-                                                max_num_classes, 
-                                                num_classes_list, 
-                                                class_weight);
+                                    num_samples, 
+                                    max_num_classes, 
+                                    num_classes_list, 
+                                    class_weight);
     }
 
     virtual void TearDown() {
