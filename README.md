@@ -1,13 +1,14 @@
 ## DecisionTree
 
-[![C++14](https://img.shields.io/badge/C%2B%2B-14-blue.svg)](https://isocpp.org/std/the-standard) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![C++14](https://img.shields.io/badge/C%2B%2B-14-blue.svg)](https://isocpp.org/std/the-standard) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 The library is an implementation of the decision tree classification algorithm in C++. It is designed to be a robust tool for classification tasks within a supervised learning context.
 
 
 ## Overview
 
-Decision Trees (DTs) stand out as a powerful supervised learning method for classification and regression. They offer several compelling benefits, such as their simplicity of understanding and interpretation, and the minimal data preparation they require. The `decisiontree` library is crafted to provide clean and intuitive interfaces, ensuring ease of use and seamless integration into your projects.
+Decision Tree (DT) is a powerful supervised learning method for classification and regression. They offer several compelling benefits, such as their simplicity of understanding and interpretation, and the minimal data preparation they require. The `decisiontree` library is crafted to provide clean and intuitive interfaces, ensuring ease of use and seamless integration into your projects.
 
 ## Key Features
 
